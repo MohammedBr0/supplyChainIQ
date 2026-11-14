@@ -42,6 +42,7 @@ TENANT_DOCTYPES = (
 	"IQ Transitor",
 	"IQ Portal User",
 	"IQ Customs Case",
+	"IQ Integration Connection",
 )
 
 PLATFORM_ROLES = {"System Manager"}
@@ -64,7 +65,9 @@ def get_user_organization(user: str | None = None) -> str | None:
 	if user not in cache:
 		cache[user] = frappe.db.get_value(
 			"IQ Organization User", {"user": user, "parenttype": "IQ Organization"}, "parent"
-		) or frappe.db.get_value("IQ Portal User", {"user": user, "is_active": 1}, "organization")
+		) or frappe.db.get_value("IQ Portal User", {"user": user, "is_active": 1}, "organization") or frappe.db.get_value(
+			"IQ Integration Connection", {"integration_user": user, "enabled": 1}, "organization"
+		)
 	return cache[user]
 
 
@@ -144,6 +147,7 @@ personal_privilege_pqc = _make_pqc("IQ Personal Privilege")
 transitor_pqc = _make_pqc("IQ Transitor")
 portal_user_pqc = _make_pqc("IQ Portal User")
 customs_case_pqc = _make_pqc("IQ Customs Case")
+integration_connection_pqc = _make_pqc("IQ Integration Connection")
 
 
 def has_permission(doc, ptype=None, user=None, debug=False) -> bool:

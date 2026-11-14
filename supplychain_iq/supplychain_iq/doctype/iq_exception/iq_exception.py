@@ -7,6 +7,13 @@ from frappe.model.document import Document
 
 
 class IQException(Document):
+	def on_update(self):
+		before = self.get_doc_before_save()
+		if self.assigned_to and (not before or before.assigned_to != self.assigned_to):
+			from supplychain_iq import notify
+
+			notify.exception_assigned(self)
+
 	def validate(self):
 		if self.status in ("Resolved", "Dismissed") and not self.resolution_notes and not self.flags.iq_auto:
 			frappe.throw(_("Add resolution notes before resolving or dismissing an exception."))

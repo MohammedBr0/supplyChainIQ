@@ -490,6 +490,12 @@ def confirm_import(batch):
 
 
 class _Writer:
+	# ledger reference for stock counts; integrations override these
+	ref_doctype = "IQ Import Batch"
+	entry_type = "Stock Count (Import)"
+	ignore_permissions = False  # integrations: the API user acts for its connection's organization
+	last_name = None
+
 	def __init__(self, batch):
 		self.batch = batch
 		self.org = batch.organization
@@ -507,7 +513,9 @@ class _Writer:
 			name = rows[0][0]
 		else:
 			doc = frappe.get_doc({"doctype": doctype, "organization": self.org, **values})
+			doc.flags.ignore_permissions = self.ignore_permissions
 			doc.insert()
+			self.last_name = doc.name
 			name = doc.name
 		self.cache[key] = name
 		return name
@@ -537,8 +545,9 @@ class StockWriter(_Writer):
 			"quantity": d["quantity"],
 			"expiry_date": d.get("expiry_date"),
 			"avg_monthly_consumption": d.get("avg_monthly_consumption"),
-			"source_import": self.batch.name,
 		}
+		if self.ref_doctype == "IQ Import Batch":
+			values["source_import"] = self.batch.name
 		# an imported count is recorded in the stock ledger as a count adjustment
 		from supplychain_iq.intelligence.stock import write_ledger
 
@@ -547,9 +556,11 @@ class StockWriter(_Writer):
 			delta = flt(d["quantity"]) - flt(doc.quantity)
 			doc.update(values)
 			doc.flags.iq_from_ledger = True
+			doc.flags.ignore_permissions = self.ignore_permissions
 			doc.save()
+			self.last_name = doc.name
 			if delta:
-				write_ledger(self.org, doc, delta, today(), "Stock Count (Import)", "IQ Import Batch", self.batch.name)
+				write_ledger(self.org, doc, delta, today(), self.entry_type, self.ref_doctype, self.batch.name)
 			return 0, 1
 		doc = frappe.get_doc(
 			{
@@ -562,9 +573,11 @@ class StockWriter(_Writer):
 			}
 		)
 		doc.flags.iq_from_ledger = True
+		doc.flags.ignore_permissions = self.ignore_permissions
 		doc.insert()
+		self.last_name = doc.name
 		if flt(d["quantity"]):
-			write_ledger(self.org, doc, flt(d["quantity"]), today(), "Stock Count (Import)", "IQ Import Batch", self.batch.name)
+			write_ledger(self.org, doc, flt(d["quantity"]), today(), self.entry_type, self.ref_doctype, self.batch.name)
 		return 1, 0
 
 
@@ -581,14 +594,19 @@ class ShipmentWriter(_Writer):
 			values["supplier"] = d.get("supplier_id") or self.ensure(
 				"IQ Supplier", "supplier_name", d["supplier"], {"supplier_name": d["supplier"]}
 			)
-		values["source_import"] = self.batch.name
+		if self.ref_doctype == "IQ Import Batch":
+			values["source_import"] = self.batch.name
 		if d.get("existing_shipment"):
 			doc = frappe.get_doc("IQ Shipment", d["existing_shipment"])
 			doc.update(values)
+			doc.flags.ignore_permissions = self.ignore_permissions
 			doc.save()
+			self.last_name = doc.name
 			return 0, 1
 		doc = frappe.get_doc({"doctype": "IQ Shipment", "organization": self.org, **values})
+		doc.flags.ignore_permissions = self.ignore_permissions
 		doc.insert()
+		self.last_name = doc.name
 		return 1, 0
 
 
@@ -601,5 +619,7 @@ class TemperatureWriter(_Writer):
 			"warehouse": d.get("warehouse_id"), "shipment": d.get("shipment_id"),
 			"item": d.get("item_id"), "batch_no": d.get("batch_no"), "source_import": self.batch.name,
 		})
+		doc.flags.ignore_permissions = self.ignore_permissions
 		doc.insert()
+		self.last_name = doc.name
 		return 1, 0

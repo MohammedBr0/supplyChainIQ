@@ -26,6 +26,7 @@ MODULES = (
 	"Diplomatic Affairs",
 	"Partner Portals",
 	"Customs Management",
+	"ERP Integration",
 )
 
 # Optional features an Org Admin must also switch on, and the organization types allowed to
@@ -54,6 +55,7 @@ DOCTYPE_MODULE = {
 	"IQ Personal Privilege": "Diplomatic Affairs",
 	"IQ Portal User": "Partner Portals",
 	"IQ Customs Case": "Customs Management",
+	"IQ Integration Connection": "ERP Integration",
 }
 
 IMPORT_TYPE_MODULE = {

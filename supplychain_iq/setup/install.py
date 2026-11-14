@@ -7,8 +7,9 @@ IQ_ROLES = (
 	"IQ Compliance Officer", "IQ HR Officer", "IQ Protocol Officer", "IQ Viewer",
 )
 DIPLOMATIC_ROUTE = "desk/iq-diplomatic"
-# external partners: website (portal) users, never desk users
+# external partners: website (portal) users, never desk users; and API-only integration users
 PORTAL_ROLES = ("IQ Supplier Portal", "IQ Transitor Portal")
+INTEGRATION_ROLE = "IQ Integration"
 PORTAL_ROUTE = "iq-portal"
 
 # Starting point only; pricing is deliberately not stored here.
@@ -27,7 +28,7 @@ DEFAULT_PACKAGES = {
 		"description": "All modules, no usage limits.",
 		"max_users": 0, "max_shipments": 0, "max_warehouses": 0, "max_import_rows": 0,
 		"deployment_options": "SaaS or On-Premise",
-		"modules": ["Shipment Control Tower", "Multimodal Corridor", "Procurement Intelligence", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard", "Cost Intelligence", "Supplier Intelligence", "Warehouse & Batch Control", "Distribution & Delivery", "Cold Chain Intelligence", "Regulatory & Privileges", "LC & Import Finance", "Diplomatic Affairs", "Partner Portals", "Customs Management"],
+		"modules": ["Shipment Control Tower", "Multimodal Corridor", "Procurement Intelligence", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard", "Cost Intelligence", "Supplier Intelligence", "Warehouse & Batch Control", "Distribution & Delivery", "Cold Chain Intelligence", "Regulatory & Privileges", "LC & Import Finance", "Diplomatic Affairs", "Partner Portals", "Customs Management", "ERP Integration"],
 	},
 }
 
@@ -50,6 +51,8 @@ def create_roles():
 	for role in IQ_ROLES:
 		if not frappe.db.exists("Role", role):
 			frappe.get_doc({"doctype": "Role", "role_name": role, "desk_access": 1}).insert(ignore_permissions=True)
+	if not frappe.db.exists("Role", INTEGRATION_ROLE):
+		frappe.get_doc({"doctype": "Role", "role_name": INTEGRATION_ROLE, "desk_access": 0}).insert(ignore_permissions=True)
 	for role in PORTAL_ROLES:
 		if not frappe.db.exists("Role", role):
 			frappe.get_doc({"doctype": "Role", "role_name": role, "desk_access": 0, "home_page": PORTAL_ROUTE}).insert(ignore_permissions=True)

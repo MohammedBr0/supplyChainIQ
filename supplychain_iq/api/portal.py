@@ -75,7 +75,12 @@ def _get_shipment(ctx, name):
 
 
 def _note(doc, ctx, text):
-	doc.add_comment("Info", f"{ctx.portal_type} portal ({ctx.partner_name}, {frappe.session.user}): {text}")
+	line = f"{ctx.portal_type} portal ({ctx.partner_name}, {frappe.session.user}): {text}"
+	doc.add_comment("Info", line)
+	from supplychain_iq import audit, notify
+
+	audit.portal_action(doc, line)
+	notify.portal_activity(doc, line)
 
 
 def _save(doc):

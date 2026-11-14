@@ -32,6 +32,19 @@ class IQPortalUser(Document):
 		if other_roles:
 			frappe.throw(_("{0} has internal roles ({1}); use a separate login for portal access.").format(self.user, ", ".join(sorted(other_roles))))
 
+	def after_insert(self):
+		"""Invite the partner: email with a set-password link when mail is configured, else tell the admins."""
+		from supplychain_iq import notify
+
+		if notify.email_enabled() and self.is_active:
+			try:
+				frappe.get_doc("User", self.user).send_welcome_mail_to_user()
+			except Exception:
+				frappe.log_error(title="IQ portal invitation email failed")
+		else:
+			notify.send(notify.members(self.organization), f"Portal access created for {self.user}", self,
+				"No outgoing email account is configured: share the portal address (/iq-portal) and a password with the partner yourself.")
+
 	def on_update(self):
 		self.sync_roles()
 		tenancy.clear_cache()

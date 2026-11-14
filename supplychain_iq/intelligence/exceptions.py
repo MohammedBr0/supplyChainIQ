@@ -536,6 +536,9 @@ def sync_exceptions(org, findings: dict) -> dict:
 		doc.flags.ignore_permissions = True
 		doc.insert()
 		created += 1
+		from supplychain_iq import notify
+
+		notify.exception_created(doc)
 	for fp, e in by_fp.items():
 		if fp not in findings:
 			doc = frappe.get_doc("IQ Exception", e.name)

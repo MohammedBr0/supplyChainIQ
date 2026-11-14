@@ -14,7 +14,9 @@
   "expected_ship_date",
   "currency",
   "total_value",
-  "notes"
+  "notes",
+  "external_id",
+  "external_system"
  ],
  "fields": [
   {
@@ -82,12 +84,27 @@
    "fieldname": "notes",
    "fieldtype": "Small Text",
    "label": "Notes"
+  },
+  {
+   "fieldname": "external_id",
+   "fieldtype": "Data",
+   "label": "External ID",
+   "read_only": 1,
+   "search_index": 1,
+   "description": "Set by an ERP integration."
+  },
+  {
+   "fieldname": "external_system",
+   "fieldtype": "Link",
+   "label": "External System",
+   "options": "IQ Integration Connection",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 0,
  "istable": 0,
  "links": [],
- "modified": "2026-11-15 02:00:00.000000",
+ "modified": "2026-11-15 05:00:00.000000",
  "modified_by": "Administrator",
  "module": "SupplyChain IQ",
  "name": "IQ Purchase Order",

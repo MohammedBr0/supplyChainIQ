@@ -334,6 +334,7 @@ _TENANT = {
 	"IQ Transitor": "transitor_pqc",
 	"IQ Portal User": "portal_user_pqc",
 	"IQ Customs Case": "customs_case_pqc",
+	"IQ Integration Connection": "integration_connection_pqc",
 }
 
 permission_query_conditions = {dt: f"supplychain_iq.tenancy.{fn}" for dt, fn in _TENANT.items()}
@@ -344,6 +345,18 @@ has_permission["IQ Organization"] = "supplychain_iq.tenancy.organization_has_per
 
 # before_validate: the organization is stamped and verified before any controller logic runs
 doc_events = {dt: {"before_validate": "supplychain_iq.tenancy.validate_tenant_document"} for dt in _TENANT}
+# append-only audit trail for every IQ DocType (filtered inside supplychain_iq.audit)
+doc_events["*"] = {
+	"after_insert": "supplychain_iq.audit.after_insert",
+	"on_update": "supplychain_iq.audit.on_update",
+	"on_submit": "supplychain_iq.audit.on_submit",
+	"on_cancel": "supplychain_iq.audit.on_cancel",
+	"on_trash": "supplychain_iq.audit.on_trash",
+}
+permission_query_conditions["IQ Audit Event"] = "supplychain_iq.audit.audit_pqc"
+permission_query_conditions["IQ Integration Log"] = "supplychain_iq.audit.integration_log_pqc"
+has_permission["IQ Audit Event"] = "supplychain_iq.audit.log_has_permission"
+has_permission["IQ Integration Log"] = "supplychain_iq.audit.log_has_permission"
 
 scheduler_events = {
 	"daily": [

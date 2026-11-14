@@ -25,6 +25,9 @@
   "lc_warning_days",
   "customs_delay_days",
   "duty_unpaid_days",
+  "notifications_section",
+  "notify_high_exceptions",
+  "notify_portal_activity",
   "features_section",
   "enable_diplomatic_id",
   "diplomatic_id_warning_days",
@@ -161,6 +164,24 @@
    "default": "3"
   },
   {
+   "fieldname": "notifications_section",
+   "fieldtype": "Section Break",
+   "label": "Notifications"
+  },
+  {
+   "fieldname": "notify_high_exceptions",
+   "fieldtype": "Check",
+   "label": "Notify on New High / Critical Exceptions",
+   "default": "1",
+   "description": "In-app notification to the relevant roles; email too when the site has an outgoing email account."
+  },
+  {
+   "fieldname": "notify_portal_activity",
+   "fieldtype": "Check",
+   "label": "Notify Staff of Partner Portal Activity",
+   "default": "1"
+  },
+  {
    "fieldname": "features_section",
    "fieldtype": "Section Break",
    "label": "Optional Features"
@@ -193,7 +214,7 @@
  "index_web_pages_for_search": 0,
  "istable": 0,
  "links": [],
- "modified": "2026-11-15 02:00:00.000000",
+ "modified": "2026-11-15 05:00:00.000000",
  "modified_by": "Administrator",
  "module": "SupplyChain IQ",
  "name": "IQ Organization",
