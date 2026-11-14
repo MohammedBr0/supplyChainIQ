@@ -14,6 +14,22 @@ for v in DB_HOST DB_NAME DB_USER DB_PASSWORD ADMIN_PASSWORD ENCRYPTION_KEY; do n
 DB_PORT=${DB_PORT:-5432}
 export PGSSLMODE=${PGSSLMODE:-require}   # Neon and most hosted Postgres require TLS
 
+# Answer Render's port scan with a 503 "starting" page while install/migrate runs.
+./env/bin/python - "$PORT" >/dev/null 2>&1 <<'PY' &
+import sys
+from http.server import BaseHTTPRequestHandler, HTTPServer
+class H(BaseHTTPRequestHandler):
+    def do_GET(self):
+        body = b"<html><body style='font-family:sans-serif;padding:40px'><h2>SupplyChain IQ is starting up</h2><p>Please refresh in a minute.</p></body></html>"
+        self.send_response(503); self.send_header("Content-Type", "text/html"); self.send_header("Retry-After", "30")
+        self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
+    do_HEAD = do_GET
+    def log_message(self, *a): pass
+HTTPServer(("0.0.0.0", int(sys.argv[1])), H).serve_forever()
+PY
+PLACEHOLDER_PID=$!
+trap 'kill $PLACEHOLDER_PID 2>/dev/null || true' EXIT
+
 redis-server --port 6379 --bind 127.0.0.1 --save "" --appendonly no --maxmemory 64mb \
   --maxmemory-policy allkeys-lru --daemonize yes >/dev/null
 
@@ -62,9 +78,22 @@ installed=$(./env/bin/python - <<'PY'
 import os, psycopg2
 conn = psycopg2.connect(host=os.environ["DB_HOST"], port=os.environ.get("DB_PORT", 5432),
     dbname=os.environ["DB_NAME"], user=os.environ["DB_USER"], password=os.environ["DB_PASSWORD"])
+conn.autocommit = True
 cur = conn.cursor()
-cur.execute("select count(*) from information_schema.tables where table_name='tabDocType'")
-print("yes" if cur.fetchone()[0] else "no")
+cur.execute("select count(*) from information_schema.tables where table_name='tabInstalled Application'")
+done = False
+if cur.fetchone()[0]:
+    cur.execute("""select count(*) from "tabInstalled Application" where app_name='supplychain_iq'""")
+    done = bool(cur.fetchone()[0])
+if not done:
+    cur.execute("select count(*) from pg_tables where schemaname='public'")
+    if cur.fetchone()[0]:
+        # an earlier first boot stopped half-way; no IQ data can exist yet, so start clean
+        import sys
+        print("Partial installation found: resetting schema", file=sys.stderr)
+        cur.execute("drop schema public cascade")
+        cur.execute("create schema public")
+print("yes" if done else "no")
 PY
 )
 
@@ -91,6 +120,10 @@ if [ "${ENABLE_BACKGROUND:-0}" = "1" ]; then
   (bench worker --queue short,default,long >/tmp/worker.log 2>&1 &)
   (bench schedule >/tmp/schedule.log 2>&1 &)
 fi
+
+kill "$PLACEHOLDER_PID" 2>/dev/null || true
+wait "$PLACEHOLDER_PID" 2>/dev/null || true
+trap - EXIT
 
 cd sites
 export FRAPPE_SITE="$SITE" FRAPPE_SITES_PATH="$BENCH/sites"

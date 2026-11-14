@@ -13,7 +13,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git curl ca-certificates xz-utils build-essential pkg-config \
-        libmariadb-dev libpq-dev redis-server cron \
+        libmariadb-dev libpq-dev postgresql-client redis-server cron \
         libffi-dev libjpeg62-turbo-dev zlib1g-dev fonts-dejavu-core \
     && NODE_VERSION=$(curl -fsSL https://nodejs.org/dist/latest-v${NODE_MAJOR}.x/ | grep -oE "node-v${NODE_MAJOR}\.[0-9]+\.[0-9]+-linux-x64\.tar\.xz" | head -1) \
     && curl -fsSL "https://nodejs.org/dist/latest-v${NODE_MAJOR}.x/${NODE_VERSION}" | tar -xJ -C /usr/local --strip-components=1 \
