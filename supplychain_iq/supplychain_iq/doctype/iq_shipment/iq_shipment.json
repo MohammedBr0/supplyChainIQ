@@ -1,0 +1,344 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-11-14 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "organization",
+  "shipment_title",
+  "status",
+  "transport_mode",
+  "col_a",
+  "supplier",
+  "purchase_order",
+  "po_reference",
+  "awb_bl_number",
+  "cargo_section",
+  "quantity",
+  "uom",
+  "incoterm",
+  "col_c",
+  "cargo_value",
+  "currency",
+  "route_section",
+  "origin",
+  "destination",
+  "planned_etd",
+  "actual_etd",
+  "col_r",
+  "planned_eta",
+  "actual_eta",
+  "delay_days",
+  "is_delayed",
+  "legs_section",
+  "legs",
+  "milestones_section",
+  "milestones",
+  "documents_section",
+  "documents",
+  "missing_documents",
+  "notes_section",
+  "source_import",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "organization",
+   "fieldtype": "Link",
+   "label": "Organization",
+   "options": "IQ Organization",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "description": "Set automatically from your organization membership."
+  },
+  {
+   "fieldname": "shipment_title",
+   "fieldtype": "Data",
+   "label": "Commodity / Description",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Planned\nBooked\nIn Transit\nAt Port\nCustoms Clearance\nReleased\nDelivered\nClosed\nCancelled",
+   "default": "Planned",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "transport_mode",
+   "fieldtype": "Select",
+   "label": "Transport Mode",
+   "options": "Sea\nAir\nRail\nRoad\nMultimodal",
+   "reqd": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "col_a",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "label": "Supplier",
+   "options": "IQ Supplier",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "purchase_order",
+   "fieldtype": "Link",
+   "label": "Purchase Order",
+   "options": "IQ Purchase Order",
+   "description": "Requires the Procurement Intelligence module."
+  },
+  {
+   "fieldname": "po_reference",
+   "fieldtype": "Data",
+   "label": "PO Reference (text)",
+   "description": "Free-text PO reference when the PO is not registered in IQ."
+  },
+  {
+   "fieldname": "awb_bl_number",
+   "fieldtype": "Data",
+   "label": "AWB / BL Number",
+   "in_list_view": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "cargo_section",
+   "fieldtype": "Section Break",
+   "label": "Cargo"
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Float",
+   "label": "Quantity"
+  },
+  {
+   "fieldname": "uom",
+   "fieldtype": "Data",
+   "label": "UOM"
+  },
+  {
+   "fieldname": "incoterm",
+   "fieldtype": "Select",
+   "label": "Incoterm",
+   "options": "\nEXW\nFCA\nFAS\nFOB\nCFR\nCIF\nCPT\nCIP\nDAP\nDPU\nDDP"
+  },
+  {
+   "fieldname": "col_c",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "cargo_value",
+   "fieldtype": "Float",
+   "label": "Cargo Value",
+   "precision": "2"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Data",
+   "label": "Currency",
+   "default": "USD",
+   "description": "ISO 4217 code, e.g. ETB, USD, EUR"
+  },
+  {
+   "fieldname": "route_section",
+   "fieldtype": "Section Break",
+   "label": "Route & Dates"
+  },
+  {
+   "fieldname": "origin",
+   "fieldtype": "Data",
+   "label": "Origin",
+   "reqd": 1
+  },
+  {
+   "fieldname": "destination",
+   "fieldtype": "Data",
+   "label": "Destination",
+   "reqd": 1
+  },
+  {
+   "fieldname": "planned_etd",
+   "fieldtype": "Date",
+   "label": "Planned ETD"
+  },
+  {
+   "fieldname": "actual_etd",
+   "fieldtype": "Date",
+   "label": "Actual ETD"
+  },
+  {
+   "fieldname": "col_r",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "planned_eta",
+   "fieldtype": "Date",
+   "label": "Planned ETA",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "actual_eta",
+   "fieldtype": "Date",
+   "label": "Actual ETA / Arrival"
+  },
+  {
+   "fieldname": "delay_days",
+   "fieldtype": "Int",
+   "label": "Delay Days",
+   "read_only": 1,
+   "in_list_view": 1,
+   "description": "Calculated: days past planned ETA (to actual ETA, or today if not yet arrived)."
+  },
+  {
+   "fieldname": "is_delayed",
+   "fieldtype": "Check",
+   "label": "Is Delayed",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "legs_section",
+   "fieldtype": "Section Break",
+   "label": "Transport Legs",
+   "description": "Ordered legs, e.g. Sea to Djibouti, Rail to Modjo Dry Port, Road to Addis Ababa. More than one leg requires the Multimodal Corridor module."
+  },
+  {
+   "fieldname": "legs",
+   "fieldtype": "Table",
+   "label": "Legs",
+   "options": "IQ Shipment Leg"
+  },
+  {
+   "fieldname": "milestones_section",
+   "fieldtype": "Section Break",
+   "label": "Milestones"
+  },
+  {
+   "fieldname": "milestones",
+   "fieldtype": "Table",
+   "label": "Milestones",
+   "options": "IQ Shipment Milestone"
+  },
+  {
+   "fieldname": "documents_section",
+   "fieldtype": "Section Break",
+   "label": "Document Checklist"
+  },
+  {
+   "fieldname": "documents",
+   "fieldtype": "Table",
+   "label": "Documents",
+   "options": "IQ Shipment Document"
+  },
+  {
+   "fieldname": "missing_documents",
+   "fieldtype": "Int",
+   "label": "Missing Required Documents",
+   "read_only": 1
+  },
+  {
+   "fieldname": "notes_section",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "source_import",
+   "fieldtype": "Link",
+   "label": "Source Import",
+   "options": "IQ Import Batch",
+   "read_only": 1
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Text Editor",
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-14 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SupplyChain IQ",
+ "name": "IQ Shipment",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Org Admin",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Logistics Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 1,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ Warehouse Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  },
+  {
+   "role": "IQ Viewer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "SHP-.YYYY.-.#####",
+ "naming_rule": "Expression (old style)",
+ "title_field": "shipment_title",
+ "show_title_field_in_link": 1,
+ "search_fields": "shipment_title,awb_bl_number,status"
+}

@@ -1,0 +1,138 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-11-14 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "package_name",
+  "is_active",
+  "deployment_options",
+  "description",
+  "limits_section",
+  "max_users",
+  "max_shipments",
+  "col_limits",
+  "max_warehouses",
+  "max_import_rows",
+  "modules_section",
+  "modules"
+ ],
+ "fields": [
+  {
+   "fieldname": "package_name",
+   "fieldtype": "Data",
+   "label": "Package Name",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active",
+   "default": "1",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "deployment_options",
+   "fieldtype": "Select",
+   "label": "Deployment Options",
+   "options": "SaaS\nOn-Premise\nSaaS or On-Premise",
+   "default": "SaaS"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "limits_section",
+   "fieldtype": "Section Break",
+   "label": "Usage Limits",
+   "description": "0 means unlimited."
+  },
+  {
+   "fieldname": "max_users",
+   "fieldtype": "Int",
+   "label": "Max Users",
+   "default": "0",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "max_shipments",
+   "fieldtype": "Int",
+   "label": "Max Active Shipments",
+   "default": "0"
+  },
+  {
+   "fieldname": "col_limits",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "max_warehouses",
+   "fieldtype": "Int",
+   "label": "Max Warehouses",
+   "default": "0"
+  },
+  {
+   "fieldname": "max_import_rows",
+   "fieldtype": "Int",
+   "label": "Max Rows per Import",
+   "default": "0"
+  },
+  {
+   "fieldname": "modules_section",
+   "fieldtype": "Section Break",
+   "label": "Module Entitlements"
+  },
+  {
+   "fieldname": "modules",
+   "fieldtype": "Table",
+   "label": "Modules",
+   "options": "IQ Package Module"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-14 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SupplyChain IQ",
+ "name": "IQ Package",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Org Admin",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "field:package_name",
+ "naming_rule": "By fieldname",
+ "title_field": "package_name",
+ "show_title_field_in_link": 1
+}

@@ -1,0 +1,113 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-11-14 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "sequence",
+  "mode",
+  "origin",
+  "destination",
+  "carrier",
+  "reference",
+  "planned_departure",
+  "actual_departure",
+  "planned_arrival",
+  "actual_arrival",
+  "status"
+ ],
+ "fields": [
+  {
+   "fieldname": "sequence",
+   "fieldtype": "Int",
+   "label": "Sequence",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "mode",
+   "fieldtype": "Select",
+   "label": "Mode",
+   "options": "Sea\nAir\nRail\nRoad",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "origin",
+   "fieldtype": "Data",
+   "label": "Origin",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "destination",
+   "fieldtype": "Data",
+   "label": "Destination",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "carrier",
+   "fieldtype": "Data",
+   "label": "Carrier"
+  },
+  {
+   "fieldname": "reference",
+   "fieldtype": "Data",
+   "label": "Reference",
+   "description": "Container, wagon, truck plate, flight or voyage reference."
+  },
+  {
+   "fieldname": "planned_departure",
+   "fieldtype": "Date",
+   "label": "Planned Departure"
+  },
+  {
+   "fieldname": "actual_departure",
+   "fieldtype": "Date",
+   "label": "Actual Departure"
+  },
+  {
+   "fieldname": "planned_arrival",
+   "fieldtype": "Date",
+   "label": "Planned Arrival",
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "actual_arrival",
+   "fieldtype": "Date",
+   "label": "Actual Arrival",
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Planned\nIn Progress\nCompleted",
+   "default": "Planned",
+   "in_list_view": 1,
+   "columns": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-14 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SupplyChain IQ",
+ "name": "IQ Shipment Leg",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0,
+ "editable_grid": 1
+}

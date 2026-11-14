@@ -1,0 +1,207 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-11-14 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "organization_name",
+  "organization_type",
+  "country",
+  "base_currency",
+  "col_sub",
+  "package",
+  "subscription_status",
+  "deployment",
+  "rules_section",
+  "expiry_warning_days",
+  "low_stock_cover_months",
+  "col_rules",
+  "delay_high_days",
+  "delay_critical_days",
+  "users_section",
+  "members"
+ ],
+ "fields": [
+  {
+   "fieldname": "organization_name",
+   "fieldtype": "Data",
+   "label": "Organization Name",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "organization_type",
+   "fieldtype": "Select",
+   "label": "Organization Type",
+   "options": "NGO / INGO / UN-related\nCommercial Importer\nMedical / Pharmaceutical Distributor\nFreight / Logistics Provider\nEnterprise\nOther",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Data",
+   "label": "Country",
+   "default": "Ethiopia"
+  },
+  {
+   "fieldname": "base_currency",
+   "fieldtype": "Data",
+   "label": "Base Currency",
+   "default": "ETB",
+   "description": "ISO 4217 code, e.g. ETB, USD, EUR"
+  },
+  {
+   "fieldname": "col_sub",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "package",
+   "fieldtype": "Link",
+   "label": "Package",
+   "options": "IQ Package",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "subscription_status",
+   "fieldtype": "Select",
+   "label": "Subscription Status",
+   "options": "Trial\nActive\nSuspended",
+   "default": "Trial",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "deployment",
+   "fieldtype": "Select",
+   "label": "Deployment",
+   "options": "SaaS\nOn-Premise",
+   "default": "SaaS"
+  },
+  {
+   "fieldname": "rules_section",
+   "fieldtype": "Section Break",
+   "label": "Intelligence Thresholds"
+  },
+  {
+   "fieldname": "expiry_warning_days",
+   "fieldtype": "Int",
+   "label": "Expiry Warning Days",
+   "default": "90",
+   "description": "Raise expiry alerts this many days before expiry."
+  },
+  {
+   "fieldname": "low_stock_cover_months",
+   "fieldtype": "Float",
+   "label": "Low Stock Cover Months",
+   "default": "1",
+   "description": "Raise low-stock alerts when stock cover falls below this many months."
+  },
+  {
+   "fieldname": "col_rules",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "delay_high_days",
+   "fieldtype": "Int",
+   "label": "Delay: High Severity After (days)",
+   "default": "14"
+  },
+  {
+   "fieldname": "delay_critical_days",
+   "fieldtype": "Int",
+   "label": "Delay: Critical Severity After (days)",
+   "default": "30"
+  },
+  {
+   "fieldname": "users_section",
+   "fieldtype": "Section Break",
+   "label": "Members"
+  },
+  {
+   "fieldname": "members",
+   "fieldtype": "Table",
+   "label": "Members",
+   "options": "IQ Organization User"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-14 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SupplyChain IQ",
+ "name": "IQ Organization",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Org Admin",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 0,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ Logistics Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  },
+  {
+   "role": "IQ Warehouse Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  },
+  {
+   "role": "IQ Viewer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "field:organization_name",
+ "naming_rule": "By fieldname",
+ "title_field": "organization_name",
+ "show_title_field_in_link": 1
+}
