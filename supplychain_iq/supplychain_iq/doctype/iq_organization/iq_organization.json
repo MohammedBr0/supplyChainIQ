@@ -21,6 +21,11 @@
   "delay_critical_days",
   "demurrage_warning_days",
   "cost_overrun_pct",
+  "privilege_warning_days",
+  "lc_warning_days",
+  "features_section",
+  "enable_diplomatic_id",
+  "diplomatic_id_warning_days",
   "users_section",
   "members"
  ],
@@ -37,7 +42,7 @@
    "fieldname": "organization_type",
    "fieldtype": "Select",
    "label": "Organization Type",
-   "options": "NGO / INGO / UN-related\nCommercial Importer\nMedical / Pharmaceutical Distributor\nFreight / Logistics Provider\nEnterprise\nOther",
+   "options": "NGO / INGO / UN-related\nInternational Organization\nCommercial Importer\nMedical / Pharmaceutical Distributor\nFreight / Logistics Provider\nEnterprise\nOther",
    "in_list_view": 1
   },
   {
@@ -130,6 +135,36 @@
    "description": "Alert when actual costs exceed estimates (same categories) by more than this."
   },
   {
+   "fieldname": "privilege_warning_days",
+   "fieldtype": "Int",
+   "label": "Privileges: Warn Days Before Expiry",
+   "default": "30"
+  },
+  {
+   "fieldname": "lc_warning_days",
+   "fieldtype": "Int",
+   "label": "LC: Warn Days Before Deadlines",
+   "default": "14"
+  },
+  {
+   "fieldname": "features_section",
+   "fieldtype": "Section Break",
+   "label": "Optional Features"
+  },
+  {
+   "fieldname": "enable_diplomatic_id",
+   "fieldtype": "Check",
+   "label": "Enable Diplomatic ID Renewal",
+   "description": "Only for NGO / INGO / UN-related and international organizations. Requires the Diplomatic ID Renewal module in your package. Access is limited to HR Officers and Org Admins."
+  },
+  {
+   "fieldname": "diplomatic_id_warning_days",
+   "fieldtype": "Int",
+   "label": "Diplomatic ID: Warn Days Before Expiry",
+   "default": "60",
+   "depends_on": "enable_diplomatic_id"
+  },
+  {
    "fieldname": "users_section",
    "fieldtype": "Section Break",
    "label": "Members"
@@ -144,7 +179,7 @@
  "index_web_pages_for_search": 0,
  "istable": 0,
  "links": [],
- "modified": "2026-11-14 18:00:00.000000",
+ "modified": "2026-11-14 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "SupplyChain IQ",
  "name": "IQ Organization",
@@ -212,6 +247,30 @@
   },
   {
    "role": "IQ QA Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  },
+  {
+   "role": "IQ Compliance Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  },
+  {
+   "role": "IQ HR Officer",
    "read": 1,
    "report": 1,
    "export": 1,

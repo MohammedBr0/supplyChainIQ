@@ -57,6 +57,11 @@
   "cost_lines_count",
   "received_quantity",
   "last_receipt",
+  "compliance_section",
+  "privilege",
+  "lc_case",
+  "col_comp",
+  "transitor",
   "notes_section",
   "source_import",
   "notes"
@@ -385,6 +390,37 @@
    "read_only": 1
   },
   {
+   "fieldname": "compliance_section",
+   "fieldtype": "Section Break",
+   "label": "Compliance, Finance & Partners",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "privilege",
+   "fieldtype": "Link",
+   "label": "Privilege",
+   "options": "IQ Privilege",
+   "description": "Duty-free privilege / permit this shipment relies on. IQ checks the planned arrival against its recorded validity."
+  },
+  {
+   "fieldname": "lc_case",
+   "fieldtype": "Link",
+   "label": "LC Case",
+   "options": "IQ LC Case"
+  },
+  {
+   "fieldname": "col_comp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "transitor",
+   "fieldtype": "Link",
+   "label": "Transitor (Clearing & Forwarding Agent)",
+   "options": "IQ Transitor",
+   "in_standard_filter": 1,
+   "description": "Assigned agent; they can update this shipment through the transitor portal."
+  },
+  {
    "fieldname": "notes_section",
    "fieldtype": "Section Break",
    "label": "Notes"
@@ -405,7 +441,7 @@
  "index_web_pages_for_search": 0,
  "istable": 0,
  "links": [],
- "modified": "2026-11-14 18:00:00.000000",
+ "modified": "2026-11-14 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "SupplyChain IQ",
  "name": "IQ Shipment",
@@ -473,6 +509,18 @@
   },
   {
    "role": "IQ QA Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  },
+  {
+   "role": "IQ Compliance Officer",
    "read": 1,
    "report": 1,
    "export": 1,

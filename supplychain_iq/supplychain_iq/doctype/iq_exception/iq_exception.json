@@ -44,7 +44,7 @@
    "fieldname": "exception_type",
    "fieldtype": "Select",
    "label": "Exception Type",
-   "options": "Shipment Delay\nOverdue Milestone\nMissing Document\nStock Out\nLow Stock\nExpiry Risk\nExpired Stock\nDemurrage Exposure\nCost Overrun\nReceipt Discrepancy\nDelivery Overdue\nDelivery Shortfall\nQA Hold\nTemperature Excursion",
+   "options": "Shipment Delay\nOverdue Milestone\nMissing Document\nStock Out\nLow Stock\nExpiry Risk\nExpired Stock\nDemurrage Exposure\nCost Overrun\nReceipt Discrepancy\nDelivery Overdue\nDelivery Shortfall\nQA Hold\nTemperature Excursion\nPrivilege Expiry\nPrivilege Conflict\nLC Deadline\nDiplomatic ID Renewal\nRenewal Follow-up",
    "reqd": 1,
    "in_list_view": 1,
    "in_standard_filter": 1
@@ -138,7 +138,7 @@
  "index_web_pages_for_search": 0,
  "istable": 0,
  "links": [],
- "modified": "2026-11-14 18:00:00.000000",
+ "modified": "2026-11-14 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "SupplyChain IQ",
  "name": "IQ Exception",
@@ -206,6 +206,30 @@
   },
   {
    "role": "IQ QA Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 0,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ Compliance Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 0,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ HR Officer",
    "read": 1,
    "report": 1,
    "export": 1,

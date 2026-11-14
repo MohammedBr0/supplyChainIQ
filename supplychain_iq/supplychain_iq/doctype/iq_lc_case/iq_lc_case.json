@@ -1,0 +1,258 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-11-14 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "organization",
+  "lc_number",
+  "bank",
+  "status",
+  "purchase_order",
+  "supplier",
+  "col1",
+  "currency",
+  "amount",
+  "proforma_reference",
+  "proforma_document",
+  "dates_section",
+  "latest_shipment_date",
+  "expiry_date",
+  "col2",
+  "presentation_days",
+  "presentation_deadline",
+  "next_deadline",
+  "checklist_section",
+  "checklist",
+  "checklist_progress",
+  "milestones_section",
+  "milestones"
+ ],
+ "fields": [
+  {
+   "fieldname": "organization",
+   "fieldtype": "Link",
+   "label": "Organization",
+   "options": "IQ Organization",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "description": "Set automatically from your organization membership."
+  },
+  {
+   "fieldname": "lc_number",
+   "fieldtype": "Data",
+   "label": "LC Number",
+   "in_list_view": 1,
+   "description": "Bank's LC reference once issued."
+  },
+  {
+   "fieldname": "bank",
+   "fieldtype": "Data",
+   "label": "Bank",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Preparing\nSubmitted to Bank\nLC Issued\nAmendment\nGoods Shipped\nDocuments Presented\nDiscrepancy Notice\nDiscrepancy Resolved\nPayment Made\nClosed\nCancelled",
+   "default": "Preparing",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Follows the latest milestone."
+  },
+  {
+   "fieldname": "purchase_order",
+   "fieldtype": "Link",
+   "label": "Purchase Order",
+   "options": "IQ Purchase Order"
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "label": "Beneficiary (Supplier)",
+   "options": "IQ Supplier"
+  },
+  {
+   "fieldname": "col1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Data",
+   "label": "Currency",
+   "reqd": 1,
+   "description": "ISO 4217 code, e.g. ETB, USD, EUR"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Float",
+   "label": "Amount",
+   "reqd": 1,
+   "precision": "2",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "proforma_reference",
+   "fieldtype": "Data",
+   "label": "Proforma Reference"
+  },
+  {
+   "fieldname": "proforma_document",
+   "fieldtype": "Attach",
+   "label": "Proforma Document"
+  },
+  {
+   "fieldname": "dates_section",
+   "fieldtype": "Section Break",
+   "label": "Key Dates",
+   "description": "Take every date from the issued LC and the bank's advice. IQ does not issue LCs, allocate foreign currency or make bank decisions."
+  },
+  {
+   "fieldname": "latest_shipment_date",
+   "fieldtype": "Date",
+   "label": "Latest Shipment Date"
+  },
+  {
+   "fieldname": "expiry_date",
+   "fieldtype": "Date",
+   "label": "Expiry Date",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "col2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "presentation_days",
+   "fieldtype": "Int",
+   "label": "Presentation Period (days after shipment)",
+   "default": "21"
+  },
+  {
+   "fieldname": "presentation_deadline",
+   "fieldtype": "Date",
+   "label": "Presentation Deadline",
+   "read_only": 1,
+   "description": "Earliest shipment date + presentation period, capped at LC expiry."
+  },
+  {
+   "fieldname": "next_deadline",
+   "fieldtype": "Date",
+   "label": "Next Deadline",
+   "read_only": 1
+  },
+  {
+   "fieldname": "checklist_section",
+   "fieldtype": "Section Break",
+   "label": "Bank Checklist",
+   "description": "Confirm the required documents with your bank, the transaction and current regulation; the starting list is only a template."
+  },
+  {
+   "fieldname": "checklist",
+   "fieldtype": "Table",
+   "label": "Checklist",
+   "options": "IQ LC Checklist Item"
+  },
+  {
+   "fieldname": "checklist_progress",
+   "fieldtype": "Percent",
+   "label": "Checklist Progress",
+   "read_only": 1
+  },
+  {
+   "fieldname": "milestones_section",
+   "fieldtype": "Section Break",
+   "label": "Milestones"
+  },
+  {
+   "fieldname": "milestones",
+   "fieldtype": "Table",
+   "label": "Milestones",
+   "options": "IQ LC Milestone"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-14 21:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SupplyChain IQ",
+ "name": "IQ LC Case",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Org Admin",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Logistics Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 1,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ Compliance Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 1,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ Viewer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "LC-.YYYY.-.#####",
+ "naming_rule": "Expression (old style)",
+ "title_field": "bank",
+ "show_title_field_in_link": 1,
+ "search_fields": "lc_number,bank,status"
+}

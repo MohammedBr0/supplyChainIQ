@@ -21,7 +21,14 @@ MODULES = (
 	"Warehouse & Batch Control",
 	"Distribution & Delivery",
 	"Cold Chain Intelligence",
+	"Regulatory & Privileges",
+	"LC & Import Finance",
+	"Diplomatic ID Renewal",
+	"Partner Portals",
 )
+
+# Optional features an Org Admin must also switch on, and the organization types allowed to
+DIPLOMATIC_ID_ORG_TYPES = ("NGO / INGO / UN-related", "International Organization")
 
 # DocType -> module that must be entitled. DocTypes not listed are core
 # (e.g. IQ Supplier is needed by every package that registers shipments).
@@ -39,6 +46,10 @@ DOCTYPE_MODULE = {
 	"IQ Stock Ledger Entry": "Warehouse & Batch Control",
 	"IQ Delivery": "Distribution & Delivery",
 	"IQ Temperature Log": "Cold Chain Intelligence",
+	"IQ Privilege": "Regulatory & Privileges",
+	"IQ LC Case": "LC & Import Finance",
+	"IQ Diplomatic ID": "Diplomatic ID Renewal",
+	"IQ Portal User": "Partner Portals",
 }
 
 IMPORT_TYPE_MODULE = {
@@ -62,7 +73,7 @@ def get_entitlements(org: str) -> dict:
 	cache = _local_cache("iq_entitlements")
 	if org not in cache:
 		org_doc = frappe.db.get_value(
-			"IQ Organization", org, ["package", "subscription_status"], as_dict=True
+			"IQ Organization", org, ["package", "subscription_status", "enable_diplomatic_id", "organization_type"], as_dict=True
 		) or frappe._dict()
 		package = (
 			frappe.db.get_value(
@@ -78,6 +89,8 @@ def get_entitlements(org: str) -> dict:
 			frappe.get_all("IQ Package Module", filters={"parent": package.name or ""}, pluck="module")
 		)
 		active = org_doc.subscription_status in ("Trial", "Active") and bool(package.is_active)
+		if not (org_doc.enable_diplomatic_id and org_doc.organization_type in DIPLOMATIC_ID_ORG_TYPES):
+			modules.discard("Diplomatic ID Renewal")  # in the package but not switched on by the organization
 		cache[org] = frappe._dict(
 			package=package.name,
 			active=active,
@@ -103,10 +116,16 @@ def doctype_entitled(doctype: str, org: str) -> bool:
 
 def require_module(org: str, module: str):
 	if not has_module(org, module):
+		hint = (
+			_(" An Org Admin must also enable it in the organization's Optional Features.")
+			if module == "Diplomatic ID Renewal"
+			else ""
+		)
 		frappe.throw(
 			_("Your package does not include the {0} module, or the subscription is not active.").format(
 				frappe.bold(module)
-			),
+			)
+			+ hint,
 			EntitlementError,
 		)
 

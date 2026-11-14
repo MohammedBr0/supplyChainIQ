@@ -1,0 +1,255 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-11-14 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "organization",
+  "employee_name",
+  "employee_id",
+  "position",
+  "col1",
+  "id_type",
+  "id_number",
+  "issue_date",
+  "expiry_date",
+  "id_status",
+  "days_to_expiry",
+  "renewal_section",
+  "renewal_status",
+  "follow_up_owner",
+  "next_follow_up",
+  "col2",
+  "internal_reviewed_by",
+  "internal_reviewed_on",
+  "submission_reference",
+  "submission_date",
+  "approval_date",
+  "new_expiry_date",
+  "collected_on",
+  "previous_expiry_date",
+  "requirements_section",
+  "requirements",
+  "authority_notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "organization",
+   "fieldtype": "Link",
+   "label": "Organization",
+   "options": "IQ Organization",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "description": "Set automatically from your organization membership."
+  },
+  {
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "label": "Employee ID"
+  },
+  {
+   "fieldname": "position",
+   "fieldtype": "Data",
+   "label": "Position"
+  },
+  {
+   "fieldname": "col1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "id_type",
+   "fieldtype": "Select",
+   "label": "ID Type",
+   "options": "Diplomatic ID\nService ID\nResidence ID\nOther",
+   "default": "Diplomatic ID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "id_number",
+   "fieldtype": "Data",
+   "label": "ID Number"
+  },
+  {
+   "fieldname": "issue_date",
+   "fieldtype": "Date",
+   "label": "Issue Date"
+  },
+  {
+   "fieldname": "expiry_date",
+   "fieldtype": "Date",
+   "label": "Expiry Date",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "id_status",
+   "fieldtype": "Select",
+   "label": "ID Status",
+   "options": "Valid\nRenewal Due\nExpired",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "days_to_expiry",
+   "fieldtype": "Int",
+   "label": "Days To Expiry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "renewal_section",
+   "fieldtype": "Section Break",
+   "label": "Renewal Workflow",
+   "description": "IQ tracks your organization's internal renewal workflow. It does not submit anything to the Ministry of Foreign Affairs or any authority."
+  },
+  {
+   "fieldname": "renewal_status",
+   "fieldtype": "Select",
+   "label": "Renewal Status",
+   "options": "Not Started\nPreparing Documents\nInternal Review Complete\nSubmitted\nAdditional Information Requested\nApproved\nCollected",
+   "default": "Not Started",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "follow_up_owner",
+   "fieldtype": "Link",
+   "label": "Follow Up Owner",
+   "options": "User"
+  },
+  {
+   "fieldname": "next_follow_up",
+   "fieldtype": "Date",
+   "label": "Next Follow Up"
+  },
+  {
+   "fieldname": "col2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "internal_reviewed_by",
+   "fieldtype": "Link",
+   "label": "Internal Reviewed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "internal_reviewed_on",
+   "fieldtype": "Date",
+   "label": "Internal Reviewed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "submission_reference",
+   "fieldtype": "Data",
+   "label": "Submission Reference"
+  },
+  {
+   "fieldname": "submission_date",
+   "fieldtype": "Date",
+   "label": "Submission Date"
+  },
+  {
+   "fieldname": "approval_date",
+   "fieldtype": "Date",
+   "label": "Approval Date"
+  },
+  {
+   "fieldname": "new_expiry_date",
+   "fieldtype": "Date",
+   "label": "New Expiry Date",
+   "description": "From the renewed ID; applied to Expiry Date when the ID is collected."
+  },
+  {
+   "fieldname": "collected_on",
+   "fieldtype": "Date",
+   "label": "Collected On"
+  },
+  {
+   "fieldname": "previous_expiry_date",
+   "fieldtype": "Date",
+   "label": "Previous Expiry Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "requirements_section",
+   "fieldtype": "Section Break",
+   "label": "Requirements Checklist"
+  },
+  {
+   "fieldname": "requirements",
+   "fieldtype": "Table",
+   "label": "Requirements",
+   "options": "IQ Renewal Requirement"
+  },
+  {
+   "fieldname": "authority_notes",
+   "fieldtype": "Small Text",
+   "label": "Correspondence / Additional Information Notes"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-14 21:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SupplyChain IQ",
+ "name": "IQ Diplomatic ID",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Org Admin",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ HR Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "DID-.#####",
+ "naming_rule": "Expression (old style)",
+ "title_field": "employee_name",
+ "show_title_field_in_link": 1,
+ "search_fields": "employee_name,employee_id,id_number"
+}

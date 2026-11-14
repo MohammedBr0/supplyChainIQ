@@ -15,6 +15,8 @@ IQ_ROLE_MAP = {
 	"Logistics Officer": "IQ Logistics Officer",
 	"Warehouse Officer": "IQ Warehouse Officer",
 	"QA Officer": "IQ QA Officer",
+	"Compliance Officer": "IQ Compliance Officer",
+	"HR Officer": "IQ HR Officer",
 	"Viewer": "IQ Viewer",
 }
 ALL_IQ_ROLES = set(IQ_ROLE_MAP.values())
@@ -30,6 +32,13 @@ class IQOrganization(Document):
 			for f in PLATFORM_FIELDS:
 				if self.get(f) != before.get(f):
 					frappe.throw(_("Only platform administrators can change {0}.").format(_(self.meta.get_label(f))), frappe.PermissionError)
+		if self.enable_diplomatic_id:
+			from supplychain_iq.entitlements import DIPLOMATIC_ID_ORG_TYPES
+
+			if self.organization_type not in DIPLOMATIC_ID_ORG_TYPES:
+				frappe.throw(
+					_("Diplomatic ID Renewal can only be enabled for NGO / INGO / UN-related and international organizations.")
+				)
 		if self.base_currency:
 			self.base_currency = self.base_currency.strip().upper()
 		self.validate_members()
@@ -47,6 +56,8 @@ class IQOrganization(Document):
 			)
 			if other:
 				frappe.throw(_("User {0} already belongs to organization {1}.").format(user, other))
+			if frappe.db.exists("IQ Portal User", {"user": user}):
+				frappe.throw(_("User {0} is a partner portal user and cannot also be a staff member.").format(user))
 		if self.package:
 			check_user_limit_for(self.package, len(users))
 

@@ -34,6 +34,11 @@ TENANT_DOCTYPES = (
 	"IQ Stock Ledger Entry",
 	"IQ Delivery",
 	"IQ Temperature Log",
+	"IQ Privilege",
+	"IQ LC Case",
+	"IQ Diplomatic ID",
+	"IQ Transitor",
+	"IQ Portal User",
 )
 
 PLATFORM_ROLES = {"System Manager"}
@@ -56,7 +61,7 @@ def get_user_organization(user: str | None = None) -> str | None:
 	if user not in cache:
 		cache[user] = frappe.db.get_value(
 			"IQ Organization User", {"user": user, "parenttype": "IQ Organization"}, "parent"
-		)
+		) or frappe.db.get_value("IQ Portal User", {"user": user, "is_active": 1}, "organization")
 	return cache[user]
 
 
@@ -116,6 +121,11 @@ stock_movement_pqc = _make_pqc("IQ Stock Movement")
 stock_ledger_pqc = _make_pqc("IQ Stock Ledger Entry")
 delivery_pqc = _make_pqc("IQ Delivery")
 temperature_log_pqc = _make_pqc("IQ Temperature Log")
+privilege_pqc = _make_pqc("IQ Privilege")
+lc_case_pqc = _make_pqc("IQ LC Case")
+diplomatic_id_pqc = _make_pqc("IQ Diplomatic ID")
+transitor_pqc = _make_pqc("IQ Transitor")
+portal_user_pqc = _make_pqc("IQ Portal User")
 
 
 def has_permission(doc, ptype=None, user=None, debug=False) -> bool:
