@@ -38,7 +38,7 @@ WORKDIR /home/frappe/frappe-bench
 COPY --chown=frappe:frappe . apps/supplychain_iq
 RUN rm -rf apps/supplychain_iq/.git \
     && uv pip install --python ./env/bin/python -e apps/supplychain_iq \
-    && echo "supplychain_iq" >> sites/apps.txt \
+    && printf "frappe\nsupplychain_iq\n" > sites/apps.txt \
     && bench build --production \
     && rm -rf ~/.cache
 
