@@ -19,15 +19,15 @@ DEFAULT_PACKAGES = {
 		"modules": ["Shipment Control Tower", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard"],
 	},
 	"IQ Professional": {
-		"description": "Essential plus procurement, multimodal corridors, landed cost, supplier performance, warehouse operations, distribution, cold chain, privileges, LC tracking, the Diplomatic Affairs app (opt-in) and partner portals.",
+		"description": "Essential plus procurement, multimodal corridors, landed cost, supplier performance, warehouse operations, distribution, cold chain, privileges, LC tracking, the Diplomatic Affairs app (opt-in) partner portals and customs management.",
 		"max_users": 25, "max_shipments": 1000, "max_warehouses": 10, "max_import_rows": 10000,
-		"modules": ["Shipment Control Tower", "Multimodal Corridor", "Procurement Intelligence", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard", "Cost Intelligence", "Supplier Intelligence", "Warehouse & Batch Control", "Distribution & Delivery", "Cold Chain Intelligence", "Regulatory & Privileges", "LC & Import Finance", "Diplomatic Affairs", "Partner Portals"],
+		"modules": ["Shipment Control Tower", "Multimodal Corridor", "Procurement Intelligence", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard", "Cost Intelligence", "Supplier Intelligence", "Warehouse & Batch Control", "Distribution & Delivery", "Cold Chain Intelligence", "Regulatory & Privileges", "LC & Import Finance", "Diplomatic Affairs", "Partner Portals", "Customs Management"],
 	},
 	"IQ Enterprise": {
 		"description": "All modules, no usage limits.",
 		"max_users": 0, "max_shipments": 0, "max_warehouses": 0, "max_import_rows": 0,
 		"deployment_options": "SaaS or On-Premise",
-		"modules": ["Shipment Control Tower", "Multimodal Corridor", "Procurement Intelligence", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard", "Cost Intelligence", "Supplier Intelligence", "Warehouse & Batch Control", "Distribution & Delivery", "Cold Chain Intelligence", "Regulatory & Privileges", "LC & Import Finance", "Diplomatic Affairs", "Partner Portals"],
+		"modules": ["Shipment Control Tower", "Multimodal Corridor", "Procurement Intelligence", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard", "Cost Intelligence", "Supplier Intelligence", "Warehouse & Batch Control", "Distribution & Delivery", "Cold Chain Intelligence", "Regulatory & Privileges", "LC & Import Finance", "Diplomatic Affairs", "Partner Portals", "Customs Management"],
 	},
 }
 

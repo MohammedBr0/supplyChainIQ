@@ -225,3 +225,31 @@ def fefo_allocate(batches: list[dict], quantity: float) -> list[dict]:
 			return out
 	available = round(quantity - remaining, 9)
 	raise InsufficientStock(f"only {available} available, {quantity} requested")
+
+
+# ---------------------------------------------------------------- shipment lines
+
+
+def allocate_cost(lines: list[dict], total: float, basis: str) -> list[dict]:
+	"""Share a landed cost across lines by value (default) or quantity.
+
+	lines: dicts with quantity and line_value. Falls back to quantity when no
+	line has a value. Returns [{allocated_cost, landed_unit_cost}] in order;
+	rounding residue goes to the last line so the parts add up to the total.
+	"""
+	if not lines:
+		return []
+	weights = [float(l.get("line_value") or 0) for l in lines] if basis == "Value" else []
+	if not weights or not sum(weights):
+		weights = [float(l.get("quantity") or 0) for l in lines]
+	total_weight = sum(weights)
+	out, running = [], 0.0
+	for i, (line, w) in enumerate(zip(lines, weights, strict=True)):
+		if i == len(lines) - 1:
+			share = round(total - running, 2)
+		else:
+			share = round(total * w / total_weight, 2) if total_weight else 0.0
+			running += share
+		qty = float(line.get("quantity") or 0)
+		out.append({"allocated_cost": share, "landed_unit_cost": round(share / qty, 4) if qty else 0.0})
+	return out

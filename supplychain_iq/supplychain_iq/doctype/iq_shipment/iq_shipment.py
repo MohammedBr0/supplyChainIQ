@@ -16,6 +16,7 @@ class IQShipment(Document):
 		self.validate_dates()
 		self.validate_legs()
 		self.validate_purchase_order()
+		self.validate_lines()
 		self.update_calculated_fields()
 		self.update_demurrage()
 		self.update_costs()
@@ -41,6 +42,37 @@ class IQShipment(Document):
 
 	def update_costs(self):
 		self.update(costs.cost_fields(None if self.is_new() else self.name, self.organization, self.quantity))
+		costs.allocate_lines(self)
+
+	def validate_lines(self):
+		for row in self.lines:
+			if (row.quantity or 0) <= 0:
+				frappe.throw(_("Item line {0}: quantity must be greater than zero.").format(row.idx))
+			if row.item:
+				item = frappe.db.get_value("IQ Item", row.item, ["item_code", "uom", "item_name"], as_dict=True)
+				row.item_code = item.item_code
+				row.uom = row.uom or item.uom
+				row.description = row.description or item.item_name
+			row.line_value = round((row.quantity or 0) * (row.unit_value or 0), 2)
+
+	@frappe.whitelist()
+	def create_receipt(self, warehouse: str):
+		"""Draft a stock receipt from the item lines (lines without an item master are skipped)."""
+		if not frappe.has_permission("IQ Stock Movement", "create"):
+			frappe.throw(_("Not permitted to create stock movements."), frappe.PermissionError)
+		rows = []
+		for line in self.lines:
+			outstanding = (line.quantity or 0) - (line.received_qty or 0)
+			if line.item and outstanding > 0:
+				rows.append({"item": line.item, "batch_no": line.batch_no, "expiry_date": line.expiry_date, "quantity": outstanding})
+		if not rows:
+			frappe.throw(_("No outstanding item lines linked to item masters to receive."))
+		mv = frappe.get_doc({
+			"doctype": "IQ Stock Movement", "organization": self.organization, "movement_type": "Receipt",
+			"posting_date": frappe.utils.today(), "to_warehouse": warehouse, "shipment": self.name, "items": rows,
+		})
+		mv.insert()
+		return mv.name
 
 	def validate_dates(self):
 		for start, end in (("planned_etd", "planned_eta"), ("actual_etd", "actual_eta")):

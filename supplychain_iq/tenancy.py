@@ -41,6 +41,7 @@ TENANT_DOCTYPES = (
 	"IQ Personal Privilege",
 	"IQ Transitor",
 	"IQ Portal User",
+	"IQ Customs Case",
 )
 
 PLATFORM_ROLES = {"System Manager"}
@@ -142,6 +143,7 @@ diplomatic_persona_pqc = _make_pqc("IQ Diplomatic Persona")
 personal_privilege_pqc = _make_pqc("IQ Personal Privilege")
 transitor_pqc = _make_pqc("IQ Transitor")
 portal_user_pqc = _make_pqc("IQ Portal User")
+customs_case_pqc = _make_pqc("IQ Customs Case")
 
 
 def has_permission(doc, ptype=None, user=None, debug=False) -> bool:

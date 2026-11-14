@@ -61,9 +61,22 @@ def update_shipment_costs(shipment: str):
 	"""Write the cost roll-up onto the shipment without re-running its validation."""
 	if not frappe.db.exists("IQ Shipment", shipment):
 		return
-	org, qty = frappe.db.get_value("IQ Shipment", shipment, ["organization", "quantity"])
+	org, qty, basis = frappe.db.get_value("IQ Shipment", shipment, ["organization", "quantity", "cost_allocation_basis"])
 	values = cost_fields(shipment, org, qty)
 	frappe.db.set_value("IQ Shipment", shipment, values, update_modified=False)
+	lines = frappe.get_all(
+		"IQ Shipment Item", filters={"parent": shipment, "parenttype": "IQ Shipment"},
+		fields=["name", "quantity", "line_value"], order_by="idx asc",
+	)
+	for line, alloc in zip(lines, calc.allocate_cost(lines, values["landed_cost_total"], basis or "Value"), strict=True):
+		frappe.db.set_value("IQ Shipment Item", line.name, alloc, update_modified=False)
+
+
+def allocate_lines(doc):
+	"""In-memory allocation for a shipment being saved."""
+	rows = [{"quantity": r.quantity, "line_value": r.line_value} for r in doc.lines]
+	for row, alloc in zip(doc.lines, calc.allocate_cost(rows, doc.landed_cost_total or 0, doc.cost_allocation_basis or "Value"), strict=True):
+		row.update(alloc)
 
 
 def cost_fields(shipment: str | None, org: str, quantity) -> dict:

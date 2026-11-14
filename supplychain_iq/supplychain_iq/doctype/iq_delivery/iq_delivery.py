@@ -81,6 +81,59 @@ class IQDelivery(Document):
 		return self.status
 
 	@frappe.whitelist()
+	def record_return(self, returns: str | list, warehouse: str | None = None, reason: str | None = None):
+		"""Return goods from this delivery into stock (on QA hold) via a Customer Return movement.
+
+		returns: [{"item": ..., "quantity": ...}]. Goods go back into the batches that were
+		dispatched, latest expiry first, never more than was dispatched less earlier returns.
+		"""
+		self.check_permission("write")
+		if self.status not in ("Dispatched", "Delivered", "Partially Delivered"):
+			frappe.throw(_("Returns can only be recorded for dispatched or delivered deliveries."))
+		if not (reason or "").strip():
+			frappe.throw(_("Give the reason for the return."))
+		returns = frappe.parse_json(returns) if isinstance(returns, str) else returns
+		dispatched = frappe.get_all(
+			"IQ Stock Movement Item", filters={"parent": self.dispatch_movement},
+			fields=["item", "batch_no", "expiry_date", "quantity"],
+		)
+		previous = frappe.db.sql(
+			"""select i.item, coalesce(i.batch_no, ''), sum(i.quantity) from `tabIQ Stock Movement Item` i
+			join `tabIQ Stock Movement` m on m.name = i.parent
+			where m.delivery = %s and m.docstatus = 1 and m.movement_type = 'Customer Return' group by i.item, coalesce(i.batch_no, '')""",
+			(self.name,),
+		)
+		used = {(i, b): flt(q) for i, b, q in previous}
+		rows = []
+		for r in returns:
+			qty = flt(r.get("quantity"))
+			if qty <= 0:
+				continue
+			batches = sorted([d for d in dispatched if d.item == r.get("item")], key=lambda d: str(d.expiry_date or "9999"), reverse=True)
+			for d in batches:
+				key = (d.item, d.batch_no or "")
+				room = flt(d.quantity) - used.get(key, 0)
+				take = min(room, qty)
+				if take > 0:
+					rows.append({"item": d.item, "batch_no": d.batch_no, "expiry_date": d.expiry_date, "quantity": take})
+					used[key] = used.get(key, 0) + take
+					qty -= take
+				if qty <= 0:
+					break
+			if qty > 0:
+				frappe.throw(_("Cannot return more of {0} than was dispatched on this delivery.").format(r.get("item")))
+		if not rows:
+			frappe.throw(_("Enter the quantities being returned."))
+		mv = frappe.get_doc({
+			"doctype": "IQ Stock Movement", "organization": self.organization, "movement_type": "Customer Return",
+			"posting_date": today(), "to_warehouse": warehouse or self.from_warehouse, "delivery": self.name,
+			"reason": reason.strip(), "items": rows,
+		})
+		mv.insert()
+		mv.submit()
+		return mv.name
+
+	@frappe.whitelist()
 	def cancel_delivery(self):
 		"""Cancel a draft, or a dispatched delivery whose goods came back (stock is returned)."""
 		self.check_permission("write")

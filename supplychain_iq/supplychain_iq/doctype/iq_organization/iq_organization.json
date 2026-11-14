@@ -23,6 +23,8 @@
   "cost_overrun_pct",
   "privilege_warning_days",
   "lc_warning_days",
+  "customs_delay_days",
+  "duty_unpaid_days",
   "features_section",
   "enable_diplomatic_id",
   "diplomatic_id_warning_days",
@@ -147,6 +149,18 @@
    "default": "14"
   },
   {
+   "fieldname": "customs_delay_days",
+   "fieldtype": "Int",
+   "label": "Customs: Alert When Clearance Exceeds (days)",
+   "default": "7"
+  },
+  {
+   "fieldname": "duty_unpaid_days",
+   "fieldtype": "Int",
+   "label": "Customs: Alert When Duties Unpaid After (days)",
+   "default": "3"
+  },
+  {
    "fieldname": "features_section",
    "fieldtype": "Section Break",
    "label": "Optional Features"
@@ -179,7 +193,7 @@
  "index_web_pages_for_search": 0,
  "istable": 0,
  "links": [],
- "modified": "2026-11-14 23:00:00.000000",
+ "modified": "2026-11-15 02:00:00.000000",
  "modified_by": "Administrator",
  "module": "SupplyChain IQ",
  "name": "IQ Organization",

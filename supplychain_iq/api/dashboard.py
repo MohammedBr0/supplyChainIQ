@@ -170,6 +170,18 @@ def get_dashboard_data(organization: str | None = None):
 				limit=8,
 			)
 		data["compliance"] = comp
+	if "Customs Management" in ent.modules:
+		cases = frappe.get_all(
+			"IQ Customs Case", filters={**f, "status": ["!=", "Cancelled"]},
+			fields=["name", "shipment", "declaration_number", "customs_office", "status", "lane", "clearance_days", "release_date"],
+			order_by="lodged_date desc",
+		)
+		released = [c for c in cases if c.status == "Released" and c.clearance_days is not None]
+		data.setdefault("compliance", {})["customs"] = {
+			"open": [c for c in cases if c.status not in ("Released", "Draft")][:8],
+			"by_status": _count_by(cases, "status"),
+			"avg_clearance_days": round(sum(c.clearance_days for c in released) / len(released), 1) if released else None,
+		}
 
 	if "Data Intake" in ent.modules:
 		data["imports"] = frappe.get_all(

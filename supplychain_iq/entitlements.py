@@ -25,6 +25,7 @@ MODULES = (
 	"LC & Import Finance",
 	"Diplomatic Affairs",
 	"Partner Portals",
+	"Customs Management",
 )
 
 # Optional features an Org Admin must also switch on, and the organization types allowed to
@@ -52,6 +53,7 @@ DOCTYPE_MODULE = {
 	"IQ Diplomatic Persona": "Diplomatic Affairs",
 	"IQ Personal Privilege": "Diplomatic Affairs",
 	"IQ Portal User": "Partner Portals",
+	"IQ Customs Case": "Customs Management",
 }
 
 IMPORT_TYPE_MODULE = {

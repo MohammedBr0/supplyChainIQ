@@ -73,6 +73,7 @@ def create_demo(password: str | None = None):
 	_relief_operations("Demo Relief Org")
 	_relief_compliance_and_partners("Demo Relief Org", password)
 	_relief_diplomatic("Demo Relief Org")
+	_relief_customs_and_lines("Demo Relief Org")
 	frappe.set_user("Administrator")
 	_pharma_data("Demo Pharma Importer")
 	for org in ORGS:
@@ -420,6 +421,37 @@ def _relief_diplomatic(org):
 			"source_document": src.file_url, "utilisations": [{"use_date": d, "description": t, "value_used": v} for d, t, v in used]}).insert()
 		_as("relief.protocol@demo.example", lambda pp=pp: frappe.get_doc("IQ Personal Privilege", pp.name).submit_for_review())
 		_as("relief.admin@demo.example", lambda pp=pp: frappe.get_doc("IQ Personal Privilege", pp.name).confirm("Matches the original (demo)."))
+
+
+def _relief_customs_and_lines(org):
+	"""Customs case and ASN item lines (synthetic)."""
+	if frappe.db.exists("IQ Customs Case", {"organization": org}):
+		return
+	o = {"organization": org}
+	med = frappe.db.get_value("IQ Shipment", {**o, "awb_bl_number": "DEMO-BL-778812"})
+	if med:
+		sh = frappe.get_doc("IQ Shipment", med)
+		frappe.get_doc({
+			"doctype": "IQ Customs Case", **o, "shipment": med, "customs_office": "Modjo Dry Port (demo)",
+			"procedure": "Duty-Free (Privilege)", "declaration_number": "DEMO-DEC-40817", "declarant": sh.transitor,
+			"lane": "Yellow", "lodged_date": _d(-11), "assessed_date": _d(-9), "inspection_date": _d(-7), "payment_date": _d(-6),
+			"currency": "ETB",
+			"taxes": [
+				{"tax_type": "Customs Duty", "assessed_amount": 1985000, "exempted": 1, "exemption_basis": sh.privilege or "Duty-free privilege"},
+				{"tax_type": "VAT", "assessed_amount": 3275250, "exempted": 1, "exemption_basis": sh.privilege or "Duty-free privilege"},
+				{"tax_type": "Withholding Tax", "assessed_amount": 59550, "paid_amount": 59550, "payment_reference": "DEMO-RCPT-5521"},
+			],
+			"notes": "Synthetic demo assessment - not real customs data.",
+		}).insert()
+	vac = frappe.db.get_value("IQ Shipment", {**o, "awb_bl_number": "DEMO-AWB-17600001"})
+	item = frappe.db.get_value("IQ Item", {**o, "item_code": "DEMO-VAC-M"})
+	if vac and item:
+		sh = frappe.get_doc("IQ Shipment", vac)
+		sh.set("lines", [
+			{"item": item, "description": "Measles vaccine 10-dose vial", "quantity": 1200, "uom": "VIAL", "batch_no": "VAC-NEW-01", "expiry_date": _d(540), "unit_value": 32},
+			{"item_code": "DEMO-DIL", "description": "Diluent 10-dose (no item master yet)", "quantity": 1200, "uom": "VIAL", "unit_value": 6.33},
+		])
+		sh.save()
 
 
 def _pharma_data(org):

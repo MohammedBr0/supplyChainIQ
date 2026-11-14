@@ -296,6 +296,16 @@ class IQDashboard {
 				h += `<div class="iq-card"><h5>${__("Privileges & permits by validity")}</h5>${this.bar(cp.privileges_by_validity)}
 					<div class="iq-tiles" style="margin-top:12px">${this.tile(cp.privileges_pending_review, __("Awaiting review"), cp.privileges_pending_review ? "warn" : "ok", "/desk/iq-privilege")}</div></div>`;
 			}
+			if (cp.customs) {
+				h += `<div class="iq-card"><h5>${__("Customs clearance")}</h5>${this.bar(cp.customs.by_status)}
+					<div class="iq-tiles" style="margin-top:12px">${this.tile(cp.customs.avg_clearance_days == null ? "-" : cp.customs.avg_clearance_days + "d", __("Avg clearance (released cases)"))}</div>`
+					+ this.table([
+						[__("Case"), (r) => link("IQ Customs Case", r.name, r.declaration_number || r.name)],
+						[__("Office"), (r) => esc(r.customs_office)],
+						[__("Status"), (r) => esc(r.status) + (r.lane ? " (" + esc(r.lane) + ")" : "")],
+						[__("Days"), (r) => esc(r.clearance_days)],
+					], cp.customs.open, __("No open customs cases")) + "</div>";
+			}
 			if (cp.lc_cases) {
 				h += '<div class="iq-card"><h5>' + __("Open LC cases") + "</h5>" + this.table([
 					[__("LC"), (r) => link("IQ LC Case", r.name, r.lc_number || r.name)],

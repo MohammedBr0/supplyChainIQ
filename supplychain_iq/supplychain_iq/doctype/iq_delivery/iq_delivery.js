@@ -22,7 +22,21 @@ frappe.ui.form.on("IQ Delivery", {
 			, __("Actions"));
 		}
 		if (frm.doc.status === "Partially Delivered") {
-			frm.set_intro(__("Short delivery. Record any returned goods with an Adjustment In movement."), "orange");
+			frm.set_intro(__("Short delivery. Record returned goods with Record Return; the delivery closes when every unit is delivered or returned."), "orange");
+		}
+		if (["Dispatched", "Delivered", "Partially Delivered"].includes(frm.doc.status)) {
+			frm.add_custom_button(__("Record Return"), () => {
+				const fields = frm.doc.items.map((r, i) => ({ fieldname: "q" + i, fieldtype: "Float", label: `${r.item_name || r.item} (${__("dispatched")} ${r.quantity}, ${__("returned")} ${r.returned_qty || 0})` }));
+				fields.push({ fieldname: "warehouse", fieldtype: "Link", options: "IQ Warehouse", label: __("Return to warehouse"), default: frm.doc.from_warehouse, reqd: 1 });
+				fields.push({ fieldname: "reason", fieldtype: "Small Text", label: __("Reason"), reqd: 1 });
+				const d = new frappe.ui.Dialog({ title: __("Record Return (goods go on QA hold for inspection)"), fields,
+					primary_action_label: __("Record"),
+					primary_action(v) {
+						const returns = frm.doc.items.map((r, i) => ({ item: r.item, quantity: v["q" + i] || 0 }));
+						frm.call({ doc: frm.doc, method: "record_return", args: { returns, warehouse: v.warehouse, reason: v.reason } }).then(() => { d.hide(); frm.reload_doc(); });
+					} });
+				d.show();
+			}, __("Actions"));
 		}
 	},
 });

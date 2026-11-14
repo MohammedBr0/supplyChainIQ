@@ -35,7 +35,7 @@ def run_for_organization(org: str) -> dict:
 		org,
 		["expiry_warning_days", "low_stock_cover_months", "delay_high_days", "delay_critical_days",
 			"demurrage_warning_days", "cost_overrun_pct", "privilege_warning_days", "lc_warning_days",
-			"diplomatic_id_warning_days"],
+			"diplomatic_id_warning_days", "customs_delay_days", "duty_unpaid_days"],
 		as_dict=True,
 	)
 	t = getdate(today())
@@ -58,6 +58,8 @@ def run_for_organization(org: str) -> dict:
 		findings.update(lc_findings(org, settings, t))
 	if has_module(org, "Diplomatic Affairs"):
 		findings.update(diplomatic_findings(org, settings, t))
+	if has_module(org, "Customs Management"):
+		findings.update(customs_findings(org, settings, t))
 	return sync_exceptions(org, findings)
 
 
@@ -162,15 +164,67 @@ def cost_findings(org, s, t):
 	return out
 
 
+def customs_findings(org, s, t):
+	out = {}
+	limit = s.customs_delay_days or 7
+	unpaid_after = s.duty_unpaid_days if s.duty_unpaid_days is not None else 3
+	for c in frappe.get_all(
+		"IQ Customs Case",
+		filters={"organization": org, "status": ["not in", ["Released", "Cancelled", "Draft"]]},
+		fields=["name", "shipment", "customs_office", "declaration_number", "status", "lodged_date", "assessed_date",
+			"payment_date", "lane", "total_payable", "total_paid", "currency"],
+	):
+		days = (t - getdate(c.lodged_date)).days if c.lodged_date else 0
+		if days > limit:
+			out[f"customs:{c.name}"] = _finding(
+				"Customs Delay", "High" if days > 2 * limit else "Medium",
+				f"Customs {c.declaration_number or c.name} at {c.customs_office}: {days} days since lodgement",
+				"IQ Customs Case", c.name,
+				f"Status '{c.status}'" + (f", {c.lane} lane" if c.lane else "") + f"; lodged {c.lodged_date}. Threshold {limit} days. Check with the declarant; demurrage may be accruing.",
+				t,
+			)
+		outstanding = round((c.total_payable or 0) - (c.total_paid or 0), 2)
+		if c.assessed_date and outstanding > 0 and (t - getdate(c.assessed_date)).days > unpaid_after:
+			out[f"duties:{c.name}"] = _finding(
+				"Duties Unpaid", "High", f"Customs {c.declaration_number or c.name}: {outstanding:,.2f} {c.currency} unpaid",
+				"IQ Customs Case", c.name,
+				f"Assessed {c.assessed_date}; payable {c.total_payable:,.2f}, paid {c.total_paid:,.2f} {c.currency}. Release usually waits for payment.",
+				t,
+			)
+	return out
+
+
 def receipt_findings(org, t):
 	out = {}
+	for line in frappe.db.sql(
+		"""select s.name as shipment, s.shipment_title, i.description, i.quantity, i.received_qty, i.uom
+		from `tabIQ Shipment Item` i join `tabIQ Shipment` s on s.name = i.parent
+		where s.organization = %s and s.status in ('Delivered', 'Closed') and i.item is not null and i.received_qty > 0
+		and abs(i.received_qty - i.quantity) > 0.000001""",
+		(org,),
+		as_dict=True,
+	):
+		diff = round(line.received_qty - line.quantity, 6)
+		key = f"receipt:{line.shipment}"
+		text = f"{line.description}: received {line.received_qty:g} of {line.quantity:g} {line.uom or ''}"
+		if key in out:
+			out[key]["description"] += f"; {text}"
+			continue
+		out[key] = _finding(
+			"Receipt Discrepancy", "High" if abs(diff) / line.quantity > 0.05 else "Medium",
+			f"{line.shipment_title}: received quantities differ from the packing details", "IQ Shipment", line.shipment,
+			text, add_days(t, 5),
+		)
+	lined = set(frappe.db.sql_list(
+		"""select distinct parent from `tabIQ Shipment Item` where parenttype = 'IQ Shipment' and item is not null"""
+	))
 	for sh in frappe.get_all(
 		"IQ Shipment",
 		filters={"organization": org, "status": ["in", ["Delivered", "Closed"]], "received_quantity": [">", 0], "quantity": [">", 0]},
 		fields=["name", "shipment_title", "quantity", "received_quantity", "uom", "last_receipt"],
 	):
 		diff = round((sh.received_quantity or 0) - (sh.quantity or 0), 6)
-		if diff:
+		if diff and sh.name not in lined:  # shipments with item lines are compared line by line above
 			out[f"receipt:{sh.name}"] = _finding(
 				"Receipt Discrepancy", "High" if abs(diff) / sh.quantity > 0.05 else "Medium",
 				f"{sh.shipment_title}: received {sh.received_quantity:g} vs shipped {sh.quantity:g} {sh.uom or ''}",

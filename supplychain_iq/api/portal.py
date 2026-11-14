@@ -101,6 +101,8 @@ def get_portal_data():
 			order_by="order_date desc",
 		)
 	data["can_submit_costs"] = ctx.portal_type == "Transitor" and has_module(ctx.organization, "Cost Intelligence")
+	data["can_customs"] = ctx.portal_type == "Transitor" and has_module(ctx.organization, "Customs Management")
+	data["tax_types"] = ["Customs Duty", "Excise Tax", "VAT", "Surtax", "Withholding Tax", "Social Welfare Levy", "Other"]
 	return data
 
 
@@ -112,6 +114,7 @@ def get_shipment(name: str):
 	out["legs"] = [{k: leg.get(k) for k in ("sequence", "mode", "origin", "destination", "carrier", "planned_arrival", "actual_arrival", "status")} for leg in doc.legs]
 	out["milestones"] = [{k: m.get(k) for k in ("milestone", "planned_date", "actual_date", "status")} for m in doc.milestones]
 	out["documents"] = [{"document_type": d.document_type, "required": d.required, "received": d.received, "has_file": bool(d.attachment)} for d in doc.documents]
+	out["lines"] = [{k: line.get(k) for k in ("item_code", "description", "quantity", "uom", "batch_no", "expiry_date", "unit_value")} for line in doc.lines]
 	if ctx.portal_type == "Transitor":
 		out["my_costs"] = frappe.get_all(
 			"IQ Cost Line",
@@ -248,3 +251,115 @@ def submit_cost(name: str, cost_category: str, currency: str, amount: float, inv
 	line.insert()
 	_note(doc, ctx, f"submitted {cost_category} charge {flt(amount):,.2f} {currency} (invoice {invoice_reference})")
 	return line.name
+
+
+# ---------------------------------------------------------------- supplier: advance shipping notices
+
+ASN_FIELDS = ("shipment_title", "transport_mode", "origin", "destination", "planned_etd", "planned_eta", "awb_bl_number", "incoterm")
+LINE_FIELDS = ("item_code", "description", "quantity", "uom", "batch_no", "expiry_date", "unit_value")
+
+
+def _lines(ctx, lines):
+	lines = frappe.parse_json(lines) if isinstance(lines, str) else (lines or [])
+	out = []
+	for line in lines:
+		row = {k: line.get(k) for k in LINE_FIELDS if line.get(k) not in (None, "")}
+		if not row.get("description") or flt(row.get("quantity")) <= 0:
+			frappe.throw(_("Each line needs a description and a quantity greater than zero."))
+		if row.get("item_code"):
+			row["item"] = frappe.db.get_value("IQ Item", {"organization": ctx.organization, "item_code": row["item_code"]})
+		out.append(row)
+	return out
+
+
+@frappe.whitelist(methods=["POST"])
+def create_shipment(purchase_order: str, values: str | dict, lines: str | list | None = None):
+	"""Advance shipping notice: the supplier registers a shipment against one of its confirmed POs."""
+	ctx = context()
+	if ctx.portal_type != "Supplier":
+		frappe.throw(_("Only suppliers can create shipping notices."), frappe.PermissionError)
+	po = frappe.db.get_value(
+		"IQ Purchase Order", {"name": purchase_order, "organization": ctx.organization, "supplier": ctx.supplier},
+		["name", "po_number", "status", "currency"], as_dict=True,
+	)
+	if not po:
+		frappe.throw(_("Purchase order not found."), frappe.PermissionError)
+	if po.status not in ("Confirmed", "Partially Shipped"):
+		frappe.throw(_("Confirm the purchase order before creating a shipping notice."))
+	values = frappe.parse_json(values) if isinstance(values, str) else values
+	data = {k: values.get(k) for k in ASN_FIELDS if values.get(k) not in (None, "")}
+	for req in ("shipment_title", "transport_mode", "origin", "destination", "planned_eta"):
+		if not data.get(req):
+			frappe.throw(_("{0} is required.").format(req.replace("_", " ").title()))
+	doc = frappe.get_doc({
+		"doctype": "IQ Shipment", "organization": ctx.organization, "supplier": ctx.supplier, "status": "Booked",
+		"po_reference": po.po_number, "currency": po.currency, "created_via_portal": 1, **data,
+		"lines": _lines(ctx, lines),
+	})
+	if has_module(ctx.organization, "Procurement Intelligence"):
+		doc.purchase_order = po.name
+	doc.flags.ignore_permissions = True
+	doc.insert()
+	_note(doc, ctx, f"created this shipping notice against PO {po.po_number} with {len(doc.lines)} line(s)")
+	return doc.name
+
+
+@frappe.whitelist(methods=["POST"])
+def update_lines(name: str, lines: str | list):
+	ctx = context()
+	if ctx.portal_type != "Supplier":
+		frappe.throw(_("Only suppliers can update packing details."), frappe.PermissionError)
+	doc = _get_shipment(ctx, name)
+	if doc.status not in ("Planned", "Booked"):
+		frappe.throw(_("Packing details can only be changed before the goods depart."))
+	doc.set("lines", _lines(ctx, lines))
+	_save(doc)
+	_note(doc, ctx, f"updated packing details ({len(doc.lines)} line(s))")
+	return len(doc.lines)
+
+
+# ---------------------------------------------------------------- transitor: customs
+
+CUSTOMS_FIELDS = ("customs_office", "procedure", "declaration_number", "lane", "lodged_date", "assessed_date",
+	"inspection_date", "payment_date", "release_date", "release_reference", "currency")
+TAX_FIELDS = ("tax_type", "assessed_amount", "exempted", "exemption_basis", "paid_amount", "payment_reference")
+
+
+@frappe.whitelist()
+def get_customs(name: str):
+	ctx = context()
+	if ctx.portal_type != "Transitor":
+		frappe.throw(_("Only transitors can view customs cases."), frappe.PermissionError)
+	require_module(ctx.organization, "Customs Management")
+	doc = _get_shipment(ctx, name)
+	if not doc.customs_case:
+		return None
+	case = frappe.get_doc("IQ Customs Case", doc.customs_case)
+	out = {f: case.get(f) for f in (*CUSTOMS_FIELDS, "name", "status", "clearance_days", "total_assessed", "total_payable", "total_paid")}
+	out["taxes"] = [{f: t.get(f) for f in TAX_FIELDS} for t in case.taxes]
+	return out
+
+
+@frappe.whitelist(methods=["POST"])
+def save_customs(name: str, values: str | dict, taxes: str | list | None = None):
+	ctx = context()
+	if ctx.portal_type != "Transitor":
+		frappe.throw(_("Only transitors can update customs cases."), frappe.PermissionError)
+	require_module(ctx.organization, "Customs Management")
+	doc = _get_shipment(ctx, name)
+	values = frappe.parse_json(values) if isinstance(values, str) else values
+	bad = set(values) - set(CUSTOMS_FIELDS)
+	if bad:
+		frappe.throw(_("You cannot change: {0}").format(", ".join(sorted(bad))), frappe.PermissionError)
+	case = frappe.get_doc("IQ Customs Case", doc.customs_case) if doc.customs_case else frappe.get_doc({
+		"doctype": "IQ Customs Case", "organization": ctx.organization, "shipment": doc.name, "declarant": ctx.transitor,
+	})
+	for f, v in values.items():
+		case.set(f, v or None)
+	if taxes is not None:
+		taxes = frappe.parse_json(taxes) if isinstance(taxes, str) else taxes
+		case.set("taxes", [{f: t.get(f) for f in TAX_FIELDS} for t in taxes])
+	case.flags.ignore_permissions = True
+	case.save()
+	_note(doc, ctx, f"updated customs case {case.name}: status {case.status}" + (f", declaration {case.declaration_number}" if case.declaration_number else ""))
+	return case.name

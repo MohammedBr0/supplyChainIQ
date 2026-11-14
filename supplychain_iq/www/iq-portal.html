@@ -20,6 +20,7 @@
 	.iqp .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
 	.iqp label { display: block; font-size: 12px; color: #6b7280; margin: 8px 0 2px; }
 	.iqp input, .iqp select { width: 100%; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; }
+	.iqp td input:not([type=checkbox]), .iqp td select { min-width: 110px; }
 	.iqp .btn { margin-top: 10px; padding: 7px 14px; border-radius: 6px; border: 0; background: #1f4e79; color: #fff; cursor: pointer; }
 	.iqp .btn.light { background: #eef2f7; color: #1f2937; }
 	.iqp .row { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; } .iqp .row > div { flex: 1; min-width: 140px; }
@@ -73,13 +74,53 @@
 			<td class="hide-sm">${esc(p.order_date || "-")}</td><td>${esc(p.expected_ship_date || "-")}</td>
 			<td class="hide-sm">${esc(p.currency)} ${Number(p.total_value || 0).toLocaleString()}</td>
 			<td>${["Draft", "Confirmed"].includes(p.status) ? `<input type="date" id="esd-${esc(p.name)}" value="${esc(p.expected_ship_date || "")}" style="max-width:150px">
-				<button class="btn light" data-po="${esc(p.name)}">${p.status === "Draft" ? __("Confirm") : __("Update date")}</button>` : ""}</td></tr>`).join("");
+				<button class="btn light" data-po="${esc(p.name)}">${p.status === "Draft" ? __("Confirm") : __("Update date")}</button>` : ""}
+				${["Confirmed", "Partially Shipped"].includes(p.status) ? `<button class="btn" data-asn="${esc(p.name)}" data-pon="${esc(p.po_number)}">${__("Create shipping notice")}</button>` : ""}</td></tr>`).join("");
 		$("#iqp-main").innerHTML = `<div class="card"><table><thead><tr><th>${__("PO")}</th><th>${__("Status")}</th><th class="hide-sm">${__("Ordered")}</th>
 			<th>${__("Expected ship date")}</th><th class="hide-sm">${__("Value")}</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="6" class="muted">${__("No purchase orders")}</td></tr>`}</tbody></table></div>`;
+		document.querySelectorAll("[data-asn]").forEach((b) => (b.onclick = () => asnForm(b.dataset.asn, b.dataset.pon)));
 		document.querySelectorAll("[data-po]").forEach((b) => (b.onclick = async () => {
 			await call("confirm_purchase_order", { name: b.dataset.po, expected_ship_date: $("#esd-" + b.dataset.po).value || null });
 			frappe.show_alert({ message: __("Saved"), indicator: "green" }); load();
 		}));
+	}
+
+	const LINE_COLS = [["item_code", __("Item code"), "text"], ["description", __("Description"), "text"], ["quantity", __("Qty"), "number"],
+		["uom", __("UOM"), "text"], ["batch_no", __("Batch"), "text"], ["expiry_date", __("Expiry"), "date"], ["unit_value", __("Unit value"), "number"]];
+	function rowsEditor(id, cols, rows, selects) {
+		const cell = (c, v) => selects && selects[c[0]] ? `<select data-c="${c[0]}">${selects[c[0]].map((o) => `<option ${o === v ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`
+			: c[2] === "check" ? `<input type="checkbox" data-c="${c[0]}" ${v ? "checked" : ""} style="width:auto">` : `<input type="${c[2]}" data-c="${c[0]}" value="${esc(v == null ? "" : v)}">`;
+		const row = (r) => `<tr>${cols.map((c) => `<td>${cell(c, r[c[0]])}</td>`).join("")}<td><button class="btn light" data-del>&times;</button></td></tr>`;
+		setTimeout(() => {
+			const t = document.getElementById(id);
+			const wire = () => t.querySelectorAll("[data-del]").forEach((b) => (b.onclick = () => b.closest("tr").remove()));
+			t.parentElement.nextElementSibling.onclick = () => { t.querySelector("tbody").insertAdjacentHTML("beforeend", row({})); wire(); };
+			wire();
+		});
+		return `<div style="overflow-x:auto"><table id="${id}"><thead><tr>${cols.map((c) => `<th>${c[1]}</th>`).join("")}<th></th></tr></thead><tbody>${(rows.length ? rows : [{}]).map(row).join("")}</tbody></table></div>
+			<button class="btn light" data-add>+ ${__("Add row")}</button>`;
+	}
+	function readRows(id) {
+		return [...document.querySelectorAll(`#${id} tbody tr`)].map((tr) => {
+			const o = {}; tr.querySelectorAll("[data-c]").forEach((i) => (o[i.dataset.c] = i.type === "checkbox" ? (i.checked ? 1 : 0) : i.value)); return o;
+		}).filter((o) => Object.values(o).some((v) => v !== "" && v !== 0));
+	}
+
+	function asnForm(po, poNumber) {
+		const f = (k, l, type, val) => `<div><label>${l}</label><input id="asn-${k}" type="${type || "text"}" value="${esc(val || "")}"></div>`;
+		$("#iqp-main").insertAdjacentHTML("beforeend", `<div class="card" id="asn-card"><h4>${__("Shipping notice for PO")} ${esc(poNumber)}</h4>
+			<div class="row">${f("shipment_title", __("Description of goods"))}<div><label>${__("Mode")}</label><select id="asn-transport_mode">${["Sea", "Air", "Rail", "Road", "Multimodal"].map((m) => `<option>${m}</option>`).join("")}</select></div>${f("awb_bl_number", __("AWB / BL number"))}</div>
+			<div class="row">${f("origin", __("Origin"))}${f("destination", __("Destination"))}${f("incoterm", __("Incoterm"))}</div>
+			<div class="row">${f("planned_etd", __("Planned departure"), "date")}${f("planned_eta", __("Planned arrival"), "date")}</div>
+			<h4 style="margin-top:12px">${__("Packing details")}</h4>${rowsEditor("asn-lines", LINE_COLS, [])}
+			<div><button class="btn" id="asn-go">${__("Submit shipping notice")}</button></div></div>`);
+		$("#asn-go").onclick = async () => {
+			const values = {}; ["shipment_title", "transport_mode", "awb_bl_number", "origin", "destination", "incoterm", "planned_etd", "planned_eta"].forEach((k) => (values[k] = $("#asn-" + k).value));
+			const name = await call("create_shipment", { purchase_order: po, values: JSON.stringify(values), lines: JSON.stringify(readRows("asn-lines")) });
+			frappe.show_alert({ message: __("Shipping notice {0} submitted", [name]), indicator: "green" });
+			tab = "shipments"; load().then(() => showShipment(name));
+		};
+		$("#asn-card").scrollIntoView({ behavior: "smooth" });
 	}
 
 	function renderShipments() {
@@ -121,7 +162,29 @@
 			<div class="grid"><div class="card"><h4>${__("Documents")}</h4><table>${docs || `<tr><td class="muted">${__("No checklist yet")}</td></tr>`}</table>
 				<div class="row"><div><label>${__("Document type")}</label><select id="d-type">${R.documents.map((d) => `<option>${esc(d)}</option>`).join("")}</select></div>
 				<div><label>${__("File (PDF, image, Office; max 10 MB)")}</label><input type="file" id="d-file"></div></div><button class="btn" id="d-go">${__("Upload")}</button></div>${costs}</div>`;
+		const editLines = data.portal_type === "Supplier" && ["Planned", "Booked"].includes(s.status);
+		let extra = `<div class="card"><h4>${__("Packing details")}</h4>${editLines ? rowsEditor("pk-lines", LINE_COLS, s.lines) + `<div><button class="btn" id="pk-go">${__("Save packing details")}</button></div>` :
+			(s.lines.length ? `<table><tr>${LINE_COLS.map((c) => `<th>${c[1]}</th>`).join("")}</tr>${s.lines.map((l) => `<tr>${LINE_COLS.map((c) => `<td>${esc(l[c[0]] == null ? "" : l[c[0]])}</td>`).join("")}</tr>`).join("")}</table>` : `<div class="muted">${__("No item lines")}</div>`)}</div>`;
+		let customs = null;
+		if (data.can_customs) {
+			customs = await call("get_customs", { name }) || { taxes: [], currency: "ETB", procedure: "Home Consumption" };
+			const cf = (k, l, type) => `<div><label>${l}</label><input id="cu-${k}" type="${type || "text"}" ${type === "date" ? `max="${today}"` : ""} value="${esc(customs[k] || "")}"></div>`;
+			const sel = (k, l, opts) => `<div><label>${l}</label><select id="cu-${k}">${opts.map((o) => `<option ${o === (customs[k] || "") ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></div>`;
+			extra += `<div class="card"><h4>${__("Customs")} ${customs.name ? `<span class="pill">${esc(customs.status)}</span> <span class="muted">${customs.clearance_days != null ? customs.clearance_days + " " + __("days") : ""}</span>` : ""}</h4>
+				<div class="row">${cf("customs_office", __("Customs office"))}${sel("procedure", __("Procedure"), ["Home Consumption", "Duty-Free (Privilege)", "Transit", "Temporary Import", "Re-export", "Other"])}${cf("declaration_number", __("Declaration no."))}</div>
+				<div class="row">${cf("lodged_date", __("Lodged"), "date")}${cf("assessed_date", __("Assessed"), "date")}${sel("lane", __("Lane"), ["", "Green", "Yellow", "Red"])}${cf("inspection_date", __("Inspection"), "date")}</div>
+				<div class="row">${cf("payment_date", __("Duties paid"), "date")}${cf("release_date", __("Released"), "date")}${cf("release_reference", __("Release reference"))}${cf("currency", __("Currency"))}</div>
+				<h4 style="margin-top:12px">${__("Assessment (as issued by customs)")}</h4>
+				${rowsEditor("cu-taxes", [["tax_type", __("Tax"), "text"], ["assessed_amount", __("Assessed"), "number"], ["exempted", __("Exempt"), "check"], ["exemption_basis", __("Basis"), "text"], ["paid_amount", __("Paid"), "number"], ["payment_reference", __("Receipt ref"), "text"]], customs.taxes, { tax_type: data.tax_types })}
+				<div><button class="btn" id="cu-go">${__("Save customs case")}</button></div></div>`;
+		}
+		$("#iqp-detail").insertAdjacentHTML("beforeend", `<div class="grid">${extra}</div>`);
 		const done = (msg) => { frappe.show_alert({ message: msg || __("Saved"), indicator: "green" }); load().then(() => showShipment(name)); };
+		if ($("#pk-go")) $("#pk-go").onclick = async () => { await call("update_lines", { name, lines: JSON.stringify(readRows("pk-lines")) }); done(); };
+		if ($("#cu-go")) $("#cu-go").onclick = async () => {
+			const values = {}; ["customs_office", "procedure", "declaration_number", "lodged_date", "assessed_date", "lane", "inspection_date", "payment_date", "release_date", "release_reference", "currency"].forEach((k) => (values[k] = $("#cu-" + k).value || null));
+			await call("save_customs", { name, values: JSON.stringify(values), taxes: JSON.stringify(readRows("cu-taxes")) }); done();
+		};
 		document.querySelectorAll("[data-ms]").forEach((b) => (b.onclick = async () => {
 			const v = document.querySelector(`[data-m="${b.dataset.ms}"]`).value; if (!v) return frappe.msgprint(__("Choose the date."));
 			await call("set_milestone", { name, milestone: b.dataset.ms, actual_date: v }); done();

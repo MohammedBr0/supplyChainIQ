@@ -9,7 +9,8 @@ from frappe.utils import flt, getdate
 from supplychain_iq.intelligence import stock
 
 NEEDS_FROM = ("Issue", "Transfer", "Adjustment Out")
-NEEDS_TO = ("Receipt", "Transfer", "Adjustment In")
+NEEDS_TO = ("Receipt", "Transfer", "Adjustment In", "Customer Return")
+RETURN_HOLD = "Returned goods: inspect before reuse (customer return)."
 ALLOCATED = ("Issue", "Transfer")  # FEFO, issuable stock only
 
 
@@ -38,8 +39,10 @@ class IQStockMovement(Document):
 			self.to_warehouse = None
 		if t == "Transfer" and self.from_warehouse == self.to_warehouse:
 			frappe.throw(_("Transfer needs two different warehouses."))
-		if t.startswith("Adjustment") and not (self.reason or "").strip():
-			frappe.throw(_("A reason is required for adjustments."))
+		if (t.startswith("Adjustment") or t == "Customer Return") and not (self.reason or "").strip():
+			frappe.throw(_("A reason is required for adjustments and returns."))
+		if t == "Customer Return" and not self.delivery:
+			frappe.throw(_("A customer return must reference the delivery it comes from."))
 		if self.shipment and t != "Receipt":
 			self.shipment = None
 		if self.shipment and frappe.db.get_value("IQ Shipment", self.shipment, "status") == "Cancelled":
@@ -85,6 +88,8 @@ class IQStockMovement(Document):
 	def on_submit(self):
 		t, org, date = self.movement_type, self.organization, self.posting_date
 		hold = self.receipt_hold_reason() if t == "Receipt" else None
+		if t == "Customer Return":
+			hold = RETURN_HOLD
 		for row in self.items:
 			src_doc = None
 			if t in NEEDS_FROM:
@@ -94,7 +99,7 @@ class IQStockMovement(Document):
 			if t in NEEDS_TO:
 				expiry = row.expiry_date or (src_doc.expiry_date if t == "Transfer" and src_doc else None)
 				qa = (src_doc.qa_status, src_doc.qa_hold_reason) if t == "Transfer" and src_doc else (None, None)
-				if hold and self.is_cold_chain(row.item):
+				if hold and (t == "Customer Return" or self.is_cold_chain(row.item)):
 					qa = ("Quarantined", hold)
 				stock.post(
 					org, row.item, self.to_warehouse, row.batch_no, flt(row.quantity), date, t, self.doctype, self.name,
@@ -102,11 +107,15 @@ class IQStockMovement(Document):
 				)
 		if self.shipment:
 			update_shipment_receipts(self.shipment, receipt=self)
+		if t == "Customer Return":
+			update_delivery_returns(self.delivery)
 
 	def on_cancel(self):
 		stock.reverse(self.doctype, self.name, self.posting_date)
 		if self.shipment:
 			update_shipment_receipts(self.shipment)
+		if self.movement_type == "Customer Return":
+			update_delivery_returns(self.delivery)
 
 	def receipt_hold_reason(self):
 		if not self.shipment:
@@ -127,6 +136,39 @@ class IQStockMovement(Document):
 		return bool(frappe.db.get_value("IQ Item", item, "requires_cold_chain"))
 
 
+def received_by_line(shipment: str) -> dict:
+	rows = frappe.db.sql(
+		"""select i.item, coalesce(i.batch_no, '') as batch_no, sum(i.quantity) as qty from `tabIQ Stock Movement Item` i
+		join `tabIQ Stock Movement` m on m.name = i.parent
+		where m.shipment = %s and m.docstatus = 1 and m.movement_type = 'Receipt' group by i.item, coalesce(i.batch_no, '')""",
+		(shipment,),
+		as_dict=True,
+	)
+	return {(r.item, r.batch_no): flt(r.qty) for r in rows}
+
+
+def update_delivery_returns(delivery: str):
+	"""Roll submitted returns onto the delivery; close it once every unit is delivered or returned."""
+	returned = frappe.db.sql(
+		"""select i.item, sum(i.quantity) from `tabIQ Stock Movement Item` i
+		join `tabIQ Stock Movement` m on m.name = i.parent
+		where m.delivery = %s and m.docstatus = 1 and m.movement_type = 'Customer Return' group by i.item""",
+		(delivery,),
+	)
+	by_item = {item: flt(q) for item, q in returned}
+	doc = frappe.get_doc("IQ Delivery", delivery)
+	for row in doc.items:
+		row.returned_qty = by_item.pop(row.item, 0)
+	accounted = all(flt(r.delivered_qty) + flt(r.returned_qty) >= flt(r.quantity) for r in doc.items)
+	if doc.status == "Partially Delivered" and accounted:
+		doc._set_status("Closed")
+	elif doc.status == "Closed" and not accounted:
+		doc._set_status("Partially Delivered")
+	doc.flags.ignore_permissions = True
+	doc.flags.iq_status_change = True
+	doc.save()
+
+
 def update_shipment_receipts(shipment: str, receipt=None):
 	"""Roll submitted receipts up onto the shipment and mark it received."""
 	received = frappe.db.sql(
@@ -139,6 +181,10 @@ def update_shipment_receipts(shipment: str, receipt=None):
 		"IQ Stock Movement", {"shipment": shipment, "docstatus": 1, "movement_type": "Receipt"}, "name", order_by="posting_date desc"
 	)
 	frappe.db.set_value("IQ Shipment", shipment, {"received_quantity": flt(received), "last_receipt": last}, update_modified=False)
+	by_line = received_by_line(shipment)
+	for line in frappe.get_all("IQ Shipment Item", filters={"parent": shipment, "parenttype": "IQ Shipment"}, fields=["name", "item", "batch_no"], order_by="idx"):
+		qty = by_line.pop((line.item, line.batch_no or ""), 0) if line.item else 0
+		frappe.db.set_value("IQ Shipment Item", line.name, "received_qty", qty, update_modified=False)
 	if receipt:
 		doc = frappe.get_doc("IQ Shipment", shipment)
 		milestone = next((m for m in doc.milestones if m.milestone == "Goods Received"), None)

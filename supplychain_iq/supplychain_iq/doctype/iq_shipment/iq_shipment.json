@@ -31,6 +31,12 @@
   "actual_eta",
   "delay_days",
   "is_delayed",
+  "lines_section",
+  "lines",
+  "cost_allocation_basis",
+  "col_lines",
+  "customs_case",
+  "created_via_portal",
   "legs_section",
   "legs",
   "milestones_section",
@@ -227,6 +233,43 @@
    "label": "Is Delayed",
    "read_only": 1,
    "in_standard_filter": 1
+  },
+  {
+   "fieldname": "lines_section",
+   "fieldtype": "Section Break",
+   "label": "Items / Packing Details (ASN)",
+   "description": "What is in the shipment. Item lines drive receipts and per-item landed cost."
+  },
+  {
+   "fieldname": "lines",
+   "fieldtype": "Table",
+   "label": "Item Lines",
+   "options": "IQ Shipment Item"
+  },
+  {
+   "fieldname": "cost_allocation_basis",
+   "fieldtype": "Select",
+   "label": "Cost Allocation Basis",
+   "options": "Value\nQuantity",
+   "default": "Value",
+   "description": "How landed cost is shared across item lines."
+  },
+  {
+   "fieldname": "col_lines",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "customs_case",
+   "fieldtype": "Link",
+   "label": "Customs Case",
+   "options": "IQ Customs Case",
+   "read_only": 1
+  },
+  {
+   "fieldname": "created_via_portal",
+   "fieldtype": "Check",
+   "label": "Created by Supplier (Portal)",
+   "read_only": 1
   },
   {
    "fieldname": "legs_section",
@@ -441,7 +484,7 @@
  "index_web_pages_for_search": 0,
  "istable": 0,
  "links": [],
- "modified": "2026-11-14 23:00:00.000000",
+ "modified": "2026-11-15 02:00:00.000000",
  "modified_by": "Administrator",
  "module": "SupplyChain IQ",
  "name": "IQ Shipment",

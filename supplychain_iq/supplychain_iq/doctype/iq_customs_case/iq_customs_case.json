@@ -1,0 +1,347 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-11-14 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "organization",
+  "shipment",
+  "customs_office",
+  "procedure",
+  "declaration_number",
+  "declarant",
+  "privilege",
+  "col1",
+  "status",
+  "lane",
+  "is_cancelled",
+  "clearance_days",
+  "dates_section",
+  "lodged_date",
+  "assessed_date",
+  "inspection_date",
+  "col2",
+  "payment_date",
+  "release_date",
+  "release_reference",
+  "taxes_section",
+  "currency",
+  "taxes",
+  "total_assessed",
+  "total_exempted",
+  "col3",
+  "total_payable",
+  "total_paid",
+  "cost_line",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "organization",
+   "fieldtype": "Link",
+   "label": "Organization",
+   "options": "IQ Organization",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "description": "Set automatically from your organization membership."
+  },
+  {
+   "fieldname": "shipment",
+   "fieldtype": "Link",
+   "label": "Shipment",
+   "options": "IQ Shipment",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "customs_office",
+   "fieldtype": "Data",
+   "label": "Customs Office",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "e.g. Modjo Dry Port, Kality, Bole Airport, Dire Dawa, Galafi."
+  },
+  {
+   "fieldname": "procedure",
+   "fieldtype": "Select",
+   "label": "Procedure",
+   "options": "Home Consumption\nDuty-Free (Privilege)\nTransit\nTemporary Import\nRe-export\nOther",
+   "reqd": 1,
+   "default": "Home Consumption"
+  },
+  {
+   "fieldname": "declaration_number",
+   "fieldtype": "Data",
+   "label": "Declaration Number",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "declarant",
+   "fieldtype": "Link",
+   "label": "Declarant (Transitor)",
+   "options": "IQ Transitor"
+  },
+  {
+   "fieldname": "privilege",
+   "fieldtype": "Link",
+   "label": "Privilege",
+   "options": "IQ Privilege",
+   "description": "Filled from the shipment for duty-free procedures."
+  },
+  {
+   "fieldname": "col1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nLodged\nAssessed\nInspection\nDuties Paid\nReleased\nCancelled",
+   "default": "Draft",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Follows the dates below."
+  },
+  {
+   "fieldname": "lane",
+   "fieldtype": "Select",
+   "label": "Inspection Lane",
+   "options": "\nGreen\nYellow\nRed",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "is_cancelled",
+   "fieldtype": "Check",
+   "label": "Cancelled"
+  },
+  {
+   "fieldname": "clearance_days",
+   "fieldtype": "Int",
+   "label": "Clearance Days",
+   "read_only": 1,
+   "in_list_view": 1,
+   "description": "Lodged to released (or to today while open)."
+  },
+  {
+   "fieldname": "dates_section",
+   "fieldtype": "Section Break",
+   "label": "Process Dates"
+  },
+  {
+   "fieldname": "lodged_date",
+   "fieldtype": "Date",
+   "label": "Lodged Date"
+  },
+  {
+   "fieldname": "assessed_date",
+   "fieldtype": "Date",
+   "label": "Assessed Date"
+  },
+  {
+   "fieldname": "inspection_date",
+   "fieldtype": "Date",
+   "label": "Inspection Date"
+  },
+  {
+   "fieldname": "col2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payment_date",
+   "fieldtype": "Date",
+   "label": "Payment Date"
+  },
+  {
+   "fieldname": "release_date",
+   "fieldtype": "Date",
+   "label": "Release Date"
+  },
+  {
+   "fieldname": "release_reference",
+   "fieldtype": "Data",
+   "label": "Release Reference"
+  },
+  {
+   "fieldname": "taxes_section",
+   "fieldtype": "Section Break",
+   "label": "Assessment",
+   "description": "Amounts exactly as assessed by customs. IQ does not calculate duties."
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Data",
+   "label": "Currency",
+   "default": "ETB",
+   "description": "ISO 4217 code, e.g. ETB, USD, EUR"
+  },
+  {
+   "fieldname": "taxes",
+   "fieldtype": "Table",
+   "label": "Taxes",
+   "options": "IQ Customs Tax Line"
+  },
+  {
+   "fieldname": "total_assessed",
+   "fieldtype": "Float",
+   "label": "Total Assessed",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_exempted",
+   "fieldtype": "Float",
+   "label": "Total Exempted",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_payable",
+   "fieldtype": "Float",
+   "label": "Total Payable",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_paid",
+   "fieldtype": "Float",
+   "label": "Total Paid",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cost_line",
+   "fieldtype": "Link",
+   "label": "Duties Cost Line",
+   "options": "IQ Cost Line",
+   "read_only": 1
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-15 02:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SupplyChain IQ",
+ "name": "IQ Customs Case",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Org Admin",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Logistics Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 1,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ Compliance Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 1,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ Warehouse Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  },
+  {
+   "role": "IQ Viewer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  },
+  {
+   "role": "IQ QA Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  },
+  {
+   "role": "IQ Protocol Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "CUS-.YYYY.-.#####",
+ "naming_rule": "Expression (old style)",
+ "title_field": "declaration_number",
+ "show_title_field_in_link": 1,
+ "search_fields": "declaration_number,shipment,customs_office"
+}

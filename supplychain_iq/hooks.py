@@ -333,6 +333,7 @@ _TENANT = {
 	"IQ Personal Privilege": "personal_privilege_pqc",
 	"IQ Transitor": "transitor_pqc",
 	"IQ Portal User": "portal_user_pqc",
+	"IQ Customs Case": "customs_case_pqc",
 }
 
 permission_query_conditions = {dt: f"supplychain_iq.tenancy.{fn}" for dt, fn in _TENANT.items()}
