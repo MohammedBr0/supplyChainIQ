@@ -11,6 +11,7 @@ from frappe.utils import add_days, getdate, now_datetime, today
 
 from supplychain_iq.entitlements import get_entitlements, has_module
 from supplychain_iq.intelligence import calculations as calc
+from supplychain_iq.intelligence import costs
 
 OPEN_STATUSES = ("Open", "In Progress")
 SHIPMENT_OPEN = ("Planned", "Booked", "In Transit", "At Port", "Customs Clearance", "Released")
@@ -32,13 +33,16 @@ def run_for_organization(org: str) -> dict:
 	settings = frappe.db.get_value(
 		"IQ Organization",
 		org,
-		["expiry_warning_days", "low_stock_cover_months", "delay_high_days", "delay_critical_days"],
+		["expiry_warning_days", "low_stock_cover_months", "delay_high_days", "delay_critical_days",
+			"demurrage_warning_days", "cost_overrun_pct"],
 		as_dict=True,
 	)
 	t = getdate(today())
 	findings = {}
 	if has_module(org, "Shipment Control Tower"):
 		findings.update(shipment_findings(org, settings, t))
+	if has_module(org, "Cost Intelligence"):
+		findings.update(cost_findings(org, settings, t))
 	if has_module(org, "Inventory Intelligence"):
 		findings.update(stock_findings(org, settings, t))
 	return sync_exceptions(org, findings)
@@ -85,6 +89,27 @@ def shipment_findings(org, s, t):
 					f"Milestone '{m.milestone}' planned for {m.planned_date} has no actual date. Responsible: {m.responsible_party or 'not set'}.",
 					add_days(t, 1),
 				)
+		dem = costs.shipment_demurrage(doc)
+		if dem["free_time_ends"] and dem["days_left"] is not None:
+			warn = s.demurrage_warning_days if s.demurrage_warning_days is not None else 3
+			cur = doc.demurrage_currency or ""
+			if dem["days"] > 0:
+				out[f"demurrage:{sh.name}"] = _finding(
+					"Demurrage Exposure", "High" if dem["days"] <= 7 else "Critical",
+					f"{sh.shipment_title}: {dem['days']} chargeable demurrage days",
+					"IQ Shipment", sh.name,
+					f"Free time ({doc.free_time_days} days from {doc.free_time_start}) ended {dem['free_time_ends']}. "
+					f"Exposure so far {dem['exposure']:,.2f} {cur} at {doc.demurrage_rate_per_day or 0:,.2f}/day; cargo not yet released.",
+					t,
+				)
+			elif dem["days_left"] <= warn:
+				out[f"demurrage:{sh.name}"] = _finding(
+					"Demurrage Exposure", "Medium",
+					f"{sh.shipment_title}: free time ends in {dem['days_left']} days",
+					"IQ Shipment", sh.name,
+					f"Free time ends {dem['free_time_ends']}; charges of {doc.demurrage_rate_per_day or 0:,.2f} {cur}/day start after that unless the cargo is released.",
+					dem["free_time_ends"],
+				)
 		eta = getdate(sh.planned_eta) if sh.planned_eta else None
 		near = sh.status in ("At Port", "Customs Clearance") or (eta and (eta - t).days <= 7)
 		if near:
@@ -97,6 +122,29 @@ def shipment_findings(org, s, t):
 					f"Missing: {', '.join(missing)}. Status '{sh.status}', planned ETA {sh.planned_eta}.",
 					add_days(t, 1),
 				)
+	return out
+
+
+def cost_findings(org, s, t):
+	out = {}
+	threshold = s.cost_overrun_pct if s.cost_overrun_pct is not None else 10
+	shipments = frappe.get_all(
+		"IQ Shipment",
+		filters={"organization": org, "status": ["!=", "Cancelled"], "cost_lines_count": [">", 0]},
+		fields=["name", "shipment_title", "base_currency"],
+	)
+	for sh in shipments:
+		summary = costs.shipment_cost_summary(sh.name)
+		pct = summary["overrun_pct"]
+		if pct is not None and pct > threshold:
+			out[f"overrun:{sh.name}"] = _finding(
+				"Cost Overrun", "High" if pct > 2 * threshold else "Medium",
+				f"{sh.shipment_title}: actual costs {pct}% above estimate",
+				"IQ Shipment", sh.name,
+				f"Categories with both estimate and actual: estimated {summary['compared_estimate']:,.2f}, "
+				f"actual {summary['compared_actual']:,.2f} {sh.base_currency or ''} (alert threshold {threshold}%).",
+				add_days(t, 7),
+			)
 	return out
 
 

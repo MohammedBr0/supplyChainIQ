@@ -12,7 +12,16 @@
   "col1",
   "contact_email",
   "contact_phone",
-  "standard_lead_time_days"
+  "standard_lead_time_days",
+  "performance_section",
+  "shipments_measured",
+  "on_time_shipments",
+  "on_time_rate",
+  "col_perf",
+  "avg_delay_days",
+  "avg_transit_days",
+  "avg_po_lead_time_days",
+  "performance_updated_on"
  ],
  "fields": [
   {
@@ -64,6 +73,64 @@
    "fieldname": "standard_lead_time_days",
    "fieldtype": "Int",
    "label": "Standard Lead Time Days"
+  },
+  {
+   "fieldname": "performance_section",
+   "fieldtype": "Section Break",
+   "label": "Performance (calculated)",
+   "description": "Calculated from delivered/closed shipments with planned and actual arrival dates. Requires the Supplier Intelligence module."
+  },
+  {
+   "fieldname": "shipments_measured",
+   "fieldtype": "Int",
+   "label": "Shipments Measured",
+   "read_only": 1
+  },
+  {
+   "fieldname": "on_time_shipments",
+   "fieldtype": "Int",
+   "label": "On Time Shipments",
+   "read_only": 1
+  },
+  {
+   "fieldname": "on_time_rate",
+   "fieldtype": "Percent",
+   "label": "On-Time Arrival Rate",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "col_perf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "avg_delay_days",
+   "fieldtype": "Float",
+   "label": "Avg Delay (days)",
+   "read_only": 1,
+   "precision": "1"
+  },
+  {
+   "fieldname": "avg_transit_days",
+   "fieldtype": "Float",
+   "label": "Avg Transit (days)",
+   "read_only": 1,
+   "precision": "1",
+   "description": "Actual departure to actual arrival."
+  },
+  {
+   "fieldname": "avg_po_lead_time_days",
+   "fieldtype": "Float",
+   "label": "Avg PO Lead Time (days)",
+   "read_only": 1,
+   "precision": "1",
+   "description": "PO order date to actual departure, for shipments linked to a registered PO."
+  },
+  {
+   "fieldname": "performance_updated_on",
+   "fieldtype": "Datetime",
+   "label": "Performance Updated On",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 0,

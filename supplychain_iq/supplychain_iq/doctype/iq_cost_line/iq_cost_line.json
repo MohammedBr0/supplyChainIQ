@@ -1,0 +1,260 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-11-14 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "organization",
+  "shipment",
+  "cost_category",
+  "cost_status",
+  "description",
+  "vendor",
+  "col1",
+  "cost_date",
+  "currency",
+  "amount",
+  "fx_section",
+  "manual_exchange_rate",
+  "manual_rate_note",
+  "col2",
+  "base_currency",
+  "exchange_rate",
+  "rate_basis",
+  "exchange_rate_record",
+  "amount_base",
+  "evidence_section",
+  "invoice_reference",
+  "source_document"
+ ],
+ "fields": [
+  {
+   "fieldname": "organization",
+   "fieldtype": "Link",
+   "label": "Organization",
+   "options": "IQ Organization",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "description": "Set automatically from your organization membership."
+  },
+  {
+   "fieldname": "shipment",
+   "fieldtype": "Link",
+   "label": "Shipment",
+   "options": "IQ Shipment",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "cost_category",
+   "fieldtype": "Select",
+   "label": "Cost Category",
+   "options": "Purchase Price\nFreight\nInsurance\nDuties & Taxes\nCustoms Clearance\nPort & Handling\nStorage\nDemurrage & Detention\nInland Transport\nDistribution\nOther",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "cost_status",
+   "fieldtype": "Select",
+   "label": "Cost Status",
+   "options": "Estimate\nActual",
+   "default": "Estimate",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Estimates are replaced by actuals of the same category in the landed cost."
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Data",
+   "label": "Description"
+  },
+  {
+   "fieldname": "vendor",
+   "fieldtype": "Data",
+   "label": "Vendor",
+   "description": "Carrier, forwarder, clearing agent, authority, etc."
+  },
+  {
+   "fieldname": "col1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "cost_date",
+   "fieldtype": "Date",
+   "label": "Cost Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Data",
+   "label": "Currency",
+   "reqd": 1,
+   "description": "ISO 4217 code, e.g. ETB, USD, EUR"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Float",
+   "label": "Amount",
+   "reqd": 1,
+   "precision": "2",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "fx_section",
+   "fieldtype": "Section Break",
+   "label": "Conversion to Base Currency"
+  },
+  {
+   "fieldname": "manual_exchange_rate",
+   "fieldtype": "Float",
+   "label": "Manual Exchange Rate",
+   "precision": "6",
+   "description": "Leave blank to use the latest IQ Exchange Rate on or before the cost date."
+  },
+  {
+   "fieldname": "manual_rate_note",
+   "fieldtype": "Data",
+   "label": "Manual Rate Note",
+   "description": "Required with a manual rate: where the rate comes from.",
+   "depends_on": "manual_exchange_rate"
+  },
+  {
+   "fieldname": "col2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "base_currency",
+   "fieldtype": "Data",
+   "label": "Base Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "exchange_rate",
+   "fieldtype": "Float",
+   "label": "Applied Exchange Rate",
+   "read_only": 1,
+   "precision": "6"
+  },
+  {
+   "fieldname": "rate_basis",
+   "fieldtype": "Select",
+   "label": "Rate Basis",
+   "options": "Same Currency\nExchange Rate Record\nManual",
+   "read_only": 1
+  },
+  {
+   "fieldname": "exchange_rate_record",
+   "fieldtype": "Link",
+   "label": "Exchange Rate Record",
+   "options": "IQ Exchange Rate",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amount_base",
+   "fieldtype": "Float",
+   "label": "Amount (base)",
+   "read_only": 1,
+   "precision": "2",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "evidence_section",
+   "fieldtype": "Section Break",
+   "label": "Evidence"
+  },
+  {
+   "fieldname": "invoice_reference",
+   "fieldtype": "Data",
+   "label": "Invoice Reference"
+  },
+  {
+   "fieldname": "source_document",
+   "fieldtype": "Attach",
+   "label": "Source Document"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-14 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SupplyChain IQ",
+ "name": "IQ Cost Line",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Org Admin",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Logistics Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 1,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ Warehouse Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  },
+  {
+   "role": "IQ Viewer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "COST-.######",
+ "naming_rule": "Expression (old style)",
+ "title_field": "cost_category",
+ "show_title_field_in_link": 1,
+ "search_fields": "shipment,cost_category,vendor"
+}

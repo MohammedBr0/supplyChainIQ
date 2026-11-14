@@ -16,6 +16,8 @@ MODULES = (
 	"Data Intake",
 	"Exception Management",
 	"Unified Dashboard",
+	"Cost Intelligence",
+	"Supplier Intelligence",
 )
 
 # DocType -> module that must be entitled. DocTypes not listed are core
@@ -28,6 +30,8 @@ DOCTYPE_MODULE = {
 	"IQ Stock Balance": "Inventory Intelligence",
 	"IQ Import Batch": "Data Intake",
 	"IQ Exception": "Exception Management",
+	"IQ Cost Line": "Cost Intelligence",
+	"IQ Exchange Rate": "Cost Intelligence",
 }
 
 IMPORT_TYPE_MODULE = {

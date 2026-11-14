@@ -38,6 +38,23 @@
   "documents_section",
   "documents",
   "missing_documents",
+  "demurrage_section",
+  "free_time_start",
+  "free_time_days",
+  "demurrage_rate_per_day",
+  "demurrage_currency",
+  "col_dem",
+  "free_time_ends",
+  "demurrage_days",
+  "demurrage_exposure",
+  "cost_section",
+  "base_currency",
+  "landed_cost_estimate",
+  "landed_cost_actual",
+  "col_cost",
+  "landed_cost_total",
+  "landed_cost_per_unit",
+  "cost_lines_count",
   "notes_section",
   "source_import",
   "notes"
@@ -242,6 +259,113 @@
    "fieldname": "missing_documents",
    "fieldtype": "Int",
    "label": "Missing Required Documents",
+   "read_only": 1
+  },
+  {
+   "fieldname": "demurrage_section",
+   "fieldtype": "Section Break",
+   "label": "Demurrage / Detention",
+   "collapsible": 1,
+   "description": "Free time and daily charge from the carrier or terminal terms for this shipment."
+  },
+  {
+   "fieldname": "free_time_start",
+   "fieldtype": "Date",
+   "label": "Free Time Start",
+   "description": "Usually the date the cargo was discharged / arrived at port or dry port."
+  },
+  {
+   "fieldname": "free_time_days",
+   "fieldtype": "Int",
+   "label": "Free Time Days"
+  },
+  {
+   "fieldname": "demurrage_rate_per_day",
+   "fieldtype": "Float",
+   "label": "Demurrage Rate Per Day",
+   "precision": "2"
+  },
+  {
+   "fieldname": "demurrage_currency",
+   "fieldtype": "Data",
+   "label": "Demurrage Currency",
+   "description": "ISO 4217 code, e.g. ETB, USD, EUR"
+  },
+  {
+   "fieldname": "col_dem",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "free_time_ends",
+   "fieldtype": "Date",
+   "label": "Free Time Ends",
+   "read_only": 1
+  },
+  {
+   "fieldname": "demurrage_days",
+   "fieldtype": "Int",
+   "label": "Chargeable Days (to date)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "demurrage_exposure",
+   "fieldtype": "Float",
+   "label": "Exposure (rate currency)",
+   "read_only": 1,
+   "precision": "2",
+   "description": "Chargeable days x daily rate, until the shipment is released or delivered."
+  },
+  {
+   "fieldname": "cost_section",
+   "fieldtype": "Section Break",
+   "label": "Landed Cost (calculated)",
+   "description": "Totals of the cost lines, converted to the organization's base currency."
+  },
+  {
+   "fieldname": "base_currency",
+   "fieldtype": "Data",
+   "label": "Base Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "landed_cost_estimate",
+   "fieldtype": "Float",
+   "label": "Estimated Cost (base)",
+   "read_only": 1,
+   "precision": "2"
+  },
+  {
+   "fieldname": "landed_cost_actual",
+   "fieldtype": "Float",
+   "label": "Actual Cost (base)",
+   "read_only": 1,
+   "precision": "2"
+  },
+  {
+   "fieldname": "col_cost",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "landed_cost_total",
+   "fieldtype": "Float",
+   "label": "Landed Cost (base)",
+   "read_only": 1,
+   "precision": "2",
+   "in_list_view": 0,
+   "description": "Actual where recorded, otherwise estimate, per cost line."
+  },
+  {
+   "fieldname": "landed_cost_per_unit",
+   "fieldtype": "Float",
+   "label": "Landed Cost per Unit (base)",
+   "read_only": 1,
+   "precision": "4",
+   "description": "Landed cost / shipment quantity. Blank when quantity is not recorded."
+  },
+  {
+   "fieldname": "cost_lines_count",
+   "fieldtype": "Int",
+   "label": "Cost Lines Count",
    "read_only": 1
   },
   {

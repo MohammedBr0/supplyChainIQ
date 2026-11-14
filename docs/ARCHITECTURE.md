@@ -37,8 +37,17 @@ Confirming an import re-reads the source file and re-runs validation. Records ar
 ## ADR-5: Single-container deployment
 gunicorn, a local Redis and static file serving (`deploy_wsgi.py`) run in one container, which fits Render's 512 MB free plan (about 200 MB in use). The worker and scheduler are optional (`ENABLE_BACKGROUND=1`).
 
+## ADR-6: Landed cost traceability (stage 4)
+Every cost line stores its original currency and amount, the applied rate, how the rate was chosen (same currency, an exchange rate record, or manual with a note), and the base amount. Rates are per organization and dated; a cost uses the latest rate on or before its cost date, never a future one.
+
+Each category starts with estimates. Once an actual arrives for that category, the actuals replace the estimates, so the landed cost moves from forecast to invoiced without double counting. Overrun compares only the categories that have both.
+
+Allocation is per shipment and per unit by shipment quantity. Each shipment carries one commodity line, so splitting costs across multiple items arrives with item-level shipment lines.
+
+## ADR-7: Tenancy hook runs on before_validate
+The organization is stamped and verified in `before_validate`, before any controller logic. Controllers can therefore rely on `self.organization`, for example for entitlement checks and base currency.
+
 ## Next stages
-4. Cost intelligence (landed cost, FX rate source and date per cost line).
 5. Regulatory privileges, diplomatic ID and LC workflows (source-linked rules, reviewer approval).
 6. Multimodal corridor analytics, cold chain, distribution.
 7. Integration adapters, object storage for files, per-customer sites.

@@ -58,6 +58,7 @@ def create_demo(password: str | None = None):
 		org.insert()
 
 	_relief_data("Demo Relief Org")
+	_relief_costs("Demo Relief Org")
 	_pharma_data("Demo Pharma Importer")
 	for org in ORGS:
 		run_for_organization(org)
@@ -155,6 +156,53 @@ def _relief_data(org):
 		("DEMO-NET", wh1, None, 4000, None, None),
 	):
 		frappe.get_doc({"doctype": "IQ Stock Balance", **o, "item": ids[item], "warehouse": wh, "batch_no": batch, "quantity": qty, "expiry_date": exp, "avg_monthly_consumption": amc}).insert()
+
+
+def _relief_costs(org):
+	"""Stage 4 demo: exchange rates, cost lines, demurrage terms (synthetic values)."""
+	if frappe.db.exists("IQ Cost Line", {"organization": org}):
+		return
+	o = {"organization": org}
+	for cur, rate in (("USD", 155.0), ("EUR", 168.0)):
+		_get_or_create("IQ Exchange Rate", {**o, "from_currency": cur, "rate_date": _d(-90)},
+			{"rate": rate, "source": "Other", "source_reference": "Synthetic demo rate - not a real quotation"})
+
+	med = frappe.db.get_value("IQ Shipment", {**o, "awb_bl_number": "DEMO-BL-778812"})
+	vac = frappe.db.get_value("IQ Shipment", {**o, "awb_bl_number": "DEMO-AWB-17600001"})
+	nut = frappe.db.get_value("IQ Shipment", {**o, "shipment_title": "Nutrition supplies (delivered)"})
+	if med:
+		doc = frappe.get_doc("IQ Shipment", med)
+		doc.free_time_start, doc.free_time_days = _d(-13), 7
+		doc.demurrage_rate_per_day, doc.demurrage_currency = 150, "USD"
+		doc.save()
+	lines = []
+	if med:
+		lines += [
+			(med, "Purchase Price", "Actual", "USD", 128000, -60, "Example Global Health Supplies"),
+			(med, "Freight", "Estimate", "USD", 9000, -50, "Example Line"),
+			(med, "Freight", "Actual", "USD", 11200, -20, "Example Line"),
+			(med, "Insurance", "Actual", "USD", 640, -45, "Example Insurer"),
+			(med, "Port & Handling", "Estimate", "USD", 1800, -22, "Djibouti terminal"),
+			(med, "Inland Transport", "Estimate", "ETB", 350000, -15, "Example Railway"),
+			(med, "Customs Clearance", "Estimate", "ETB", 85000, -11, "Example Clearing Agent"),
+		]
+	if vac:
+		lines += [
+			(vac, "Purchase Price", "Actual", "EUR", 46000, -20, "Example Cold Chain Biologics"),
+			(vac, "Freight", "Estimate", "EUR", 5200, -5, "Example Air Cargo"),
+		]
+	if nut:
+		lines += [
+			(nut, "Purchase Price", "Actual", "USD", 54000, -85, "Example Global Health Supplies"),
+			(nut, "Freight", "Actual", "USD", 4100, -60, "Example Line"),
+			(nut, "Storage", "Actual", "ETB", 42000, -45, "Example Bonded Warehouse"),
+		]
+	for ship, cat, status, cur, amount, days, vendor in lines:
+		frappe.get_doc({
+			"doctype": "IQ Cost Line", **o, "shipment": ship, "cost_category": cat, "cost_status": status,
+			"currency": cur, "amount": amount, "cost_date": _d(days), "vendor": vendor,
+			"description": "Synthetic demo cost",
+		}).insert()
 
 
 def _pharma_data(org):

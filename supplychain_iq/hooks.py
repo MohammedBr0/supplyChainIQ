@@ -311,6 +311,8 @@ _TENANT = {
 	"IQ Stock Balance": "stock_balance_pqc",
 	"IQ Import Batch": "import_batch_pqc",
 	"IQ Exception": "exception_pqc",
+	"IQ Cost Line": "cost_line_pqc",
+	"IQ Exchange Rate": "exchange_rate_pqc",
 }
 
 permission_query_conditions = {dt: f"supplychain_iq.tenancy.{fn}" for dt, fn in _TENANT.items()}
@@ -319,8 +321,12 @@ permission_query_conditions["IQ Organization"] = "supplychain_iq.tenancy.organiz
 has_permission = {dt: "supplychain_iq.tenancy.has_permission" for dt in _TENANT}
 has_permission["IQ Organization"] = "supplychain_iq.tenancy.organization_has_permission"
 
-doc_events = {dt: {"validate": "supplychain_iq.tenancy.validate_tenant_document"} for dt in _TENANT}
+# before_validate: the organization is stamped and verified before any controller logic runs
+doc_events = {dt: {"before_validate": "supplychain_iq.tenancy.validate_tenant_document"} for dt in _TENANT}
 
 scheduler_events = {
-	"daily": ["supplychain_iq.intelligence.exceptions.run_all_organizations"],
+	"daily": [
+		"supplychain_iq.intelligence.exceptions.run_all_organizations",
+		"supplychain_iq.intelligence.suppliers.update_all",
+	],
 }

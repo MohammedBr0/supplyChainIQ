@@ -80,3 +80,113 @@ def delay_severity(delay_days: int, high_after: int, critical_after: int) -> str
 	if delay_days > high_after:
 		return "High"
 	return "Medium"
+
+
+# ---------------------------------------------------------------- cost intelligence
+
+
+def landed_cost(lines: list[dict]) -> dict:
+	"""Aggregate cost lines already converted to base currency.
+
+	lines: dicts with cost_category, cost_status ("Estimate"/"Actual"), amount_base.
+	Per category, actuals replace estimates once any actual exists, so the
+	landed cost moves from estimate to actual as invoices arrive.
+	"""
+	by_cat: dict[str, dict[str, float]] = {}
+	for line in lines:
+		cat = by_cat.setdefault(line["cost_category"], {"Estimate": 0.0, "Actual": 0.0, "has_actual": False})
+		amount = float(line.get("amount_base") or 0)
+		cat[line["cost_status"]] += amount
+		if line["cost_status"] == "Actual":
+			cat["has_actual"] = True
+	categories = {
+		k: round(v["Actual"] if v["has_actual"] else v["Estimate"], 2) for k, v in by_cat.items()
+	}
+	estimate = round(sum(v["Estimate"] for v in by_cat.values()), 2)
+	actual = round(sum(v["Actual"] for v in by_cat.values()), 2)
+	# overrun is only meaningful where both an estimate and an actual exist
+	compared = [v for v in by_cat.values() if v["has_actual"] and v["Estimate"]]
+	compared_estimate = sum(v["Estimate"] for v in compared)
+	compared_actual = sum(v["Actual"] for v in compared)
+	overrun_pct = (
+		round(100.0 * (compared_actual - compared_estimate) / compared_estimate, 1) if compared_estimate else None
+	)
+	return {
+		"total": round(sum(categories.values()), 2),
+		"estimate": estimate,
+		"actual": actual,
+		"by_category": categories,
+		"overrun_pct": overrun_pct,
+		"compared_estimate": round(compared_estimate, 2),
+		"compared_actual": round(compared_actual, 2),
+	}
+
+
+def per_unit(total: float, quantity: float | None) -> float | None:
+	if not quantity or quantity <= 0:
+		return None
+	return round(total / quantity, 4)
+
+
+def demurrage(
+	free_time_start: date | None,
+	free_time_days: int | None,
+	rate_per_day: float | None,
+	stop_date: date | None,
+	today: date,
+) -> dict:
+	"""Chargeable demurrage days and exposure.
+
+	stop_date: when charges stop (cargo released/delivered); None = still accruing.
+	"""
+	if not free_time_start or free_time_days is None:
+		return {"free_time_ends": None, "days": 0, "exposure": 0.0, "days_left": None}
+	from datetime import timedelta
+
+	ends = free_time_start + timedelta(days=int(free_time_days))
+	reference = stop_date or today
+	days = max(0, (reference - ends).days)
+	return {
+		"free_time_ends": ends,
+		"days": days,
+		"exposure": round(days * float(rate_per_day or 0), 2),
+		"days_left": None if stop_date else (ends - today).days,
+	}
+
+
+# ---------------------------------------------------------------- supplier performance
+
+
+def supplier_performance(shipments: list[dict], po_dates: dict | None = None) -> dict:
+	"""On-time rate, delay, transit and PO lead time from delivered shipments.
+
+	shipments: dicts with planned_eta, actual_eta, actual_etd, purchase_order.
+	Only shipments with both planned and actual arrival are measured.
+	"""
+	po_dates = po_dates or {}
+	measured = [s for s in shipments if s.get("planned_eta") and s.get("actual_eta")]
+	on_time = [s for s in measured if s["actual_eta"] <= s["planned_eta"]]
+	delays = [max(0, (s["actual_eta"] - s["planned_eta"]).days) for s in measured]
+	transits = [
+		(s["actual_eta"] - s["actual_etd"]).days
+		for s in measured
+		if s.get("actual_etd") and s["actual_eta"] >= s["actual_etd"]
+	]
+	leads = [
+		(s["actual_etd"] - po_dates[s["purchase_order"]]).days
+		for s in shipments
+		if s.get("purchase_order") in po_dates and s.get("actual_etd") and po_dates[s["purchase_order"]]
+		and s["actual_etd"] >= po_dates[s["purchase_order"]]
+	]
+
+	def avg(values):
+		return round(sum(values) / len(values), 1) if values else None
+
+	return {
+		"shipments_measured": len(measured),
+		"on_time_shipments": len(on_time),
+		"on_time_rate": round(100.0 * len(on_time) / len(measured), 1) if measured else None,
+		"avg_delay_days": avg(delays),
+		"avg_transit_days": avg(transits),
+		"avg_po_lead_time_days": avg(leads),
+	}

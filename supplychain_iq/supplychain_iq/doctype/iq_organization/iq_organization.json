@@ -19,6 +19,8 @@
   "col_rules",
   "delay_high_days",
   "delay_critical_days",
+  "demurrage_warning_days",
+  "cost_overrun_pct",
   "users_section",
   "members"
  ],
@@ -113,6 +115,19 @@
    "fieldtype": "Int",
    "label": "Delay: Critical Severity After (days)",
    "default": "30"
+  },
+  {
+   "fieldname": "demurrage_warning_days",
+   "fieldtype": "Int",
+   "label": "Demurrage: Warn Days Before Free Time Ends",
+   "default": "3"
+  },
+  {
+   "fieldname": "cost_overrun_pct",
+   "fieldtype": "Percent",
+   "label": "Cost Overrun Alert Above (%)",
+   "default": "10",
+   "description": "Alert when actual costs exceed estimates (same categories) by more than this."
   },
   {
    "fieldname": "users_section",

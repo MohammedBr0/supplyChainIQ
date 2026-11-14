@@ -44,7 +44,7 @@
    "fieldname": "exception_type",
    "fieldtype": "Select",
    "label": "Exception Type",
-   "options": "Shipment Delay\nOverdue Milestone\nMissing Document\nStock Out\nLow Stock\nExpiry Risk\nExpired Stock",
+   "options": "Shipment Delay\nOverdue Milestone\nMissing Document\nStock Out\nLow Stock\nExpiry Risk\nExpired Stock\nDemurrage Exposure\nCost Overrun",
    "reqd": 1,
    "in_list_view": 1,
    "in_standard_filter": 1

@@ -35,6 +35,17 @@ class TestTenantIsolation(IntegrationTestCase):
 		doc = _shipment().insert()
 		self.assertEqual(doc.organization, A)
 
+	def test_entitled_member_can_create_multimodal_shipment(self):
+		# regression: the organization must be stamped before controller checks run
+		as_user(UA)
+		legs = [
+			{"sequence": 2, "mode": "Rail", "origin": "Djibouti Port", "destination": "Modjo Dry Port"},
+			{"sequence": 1, "mode": "Sea", "origin": "Mumbai", "destination": "Djibouti Port"},
+		]
+		doc = _shipment(legs=legs).insert()
+		self.assertEqual(doc.transport_mode, "Multimodal")
+		self.assertEqual([leg.mode for leg in doc.legs], ["Sea", "Rail"])
+
 	def test_user_cannot_read_other_org_records(self):
 		as_user(UB)
 		b_ship = _shipment(shipment_title="B secret cargo").insert()

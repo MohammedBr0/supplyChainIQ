@@ -8,6 +8,7 @@ from frappe.utils import getdate, today
 
 from supplychain_iq.entitlements import has_module
 from supplychain_iq.intelligence import calculations as calc
+from supplychain_iq.intelligence import costs, suppliers
 
 
 class IQShipment(Document):
@@ -16,6 +17,26 @@ class IQShipment(Document):
 		self.validate_legs()
 		self.validate_purchase_order()
 		self.update_calculated_fields()
+		self.update_demurrage()
+		self.update_costs()
+
+	def on_update(self):
+		suppliers.update_supplier(self.supplier)
+		before = self.get_doc_before_save()
+		if before and before.supplier and before.supplier != self.supplier:
+			suppliers.update_supplier(before.supplier)
+
+	def update_demurrage(self):
+		self.demurrage_currency = costs.normalize_currency(self.demurrage_currency, _("Demurrage Currency"))
+		if self.free_time_days is not None and self.free_time_days < 0:
+			frappe.throw(_("Free time days cannot be negative."))
+		d = costs.shipment_demurrage(self)
+		self.free_time_ends = d["free_time_ends"]
+		self.demurrage_days = d["days"]
+		self.demurrage_exposure = d["exposure"]
+
+	def update_costs(self):
+		self.update(costs.cost_fields(None if self.is_new() else self.name, self.organization, self.quantity))
 
 	def validate_dates(self):
 		for start, end in (("planned_etd", "planned_eta"), ("actual_etd", "actual_eta")):

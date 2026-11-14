@@ -136,6 +136,19 @@ def get_dashboard_data(organization: str | None = None):
 			"top": exc[:12],
 		}
 
+	if "Cost Intelligence" in ent.modules:
+		data["costs"] = cost_section(org, t)
+
+	if "Supplier Intelligence" in ent.modules:
+		data["suppliers"] = frappe.get_all(
+			"IQ Supplier",
+			filters={**f, "shipments_measured": [">", 0]},
+			fields=["name", "supplier_name", "shipments_measured", "on_time_rate", "avg_delay_days",
+				"avg_transit_days", "avg_po_lead_time_days"],
+			order_by="on_time_rate asc",
+			limit=10,
+		)
+
 	if "Data Intake" in ent.modules:
 		data["imports"] = frappe.get_all(
 			"IQ Import Batch",
@@ -145,6 +158,60 @@ def get_dashboard_data(organization: str | None = None):
 			limit=5,
 		)
 	return data
+
+
+def cost_section(org, t):
+	from supplychain_iq.intelligence import costs
+
+	base = costs.base_currency(org)
+	open_shipments = frappe.get_all(
+		"IQ Shipment",
+		filters={"organization": org, "status": ["not in", ["Cancelled"]]},
+		fields=["name", "shipment_title", "status", "landed_cost_total", "landed_cost_estimate", "landed_cost_actual",
+			"landed_cost_per_unit", "uom", "cost_lines_count", "free_time_start", "free_time_days",
+			"demurrage_rate_per_day", "demurrage_currency", "actual_eta", "modified"],
+	)
+	lines = frappe.get_all(
+		"IQ Cost Line",
+		filters={"organization": org},
+		fields=["shipment", "cost_category", "cost_status", "amount_base"],
+	)
+	from supplychain_iq.intelligence import calculations as calc
+
+	by_shipment = {}
+	for line in lines:
+		by_shipment.setdefault(line.shipment, []).append(line)
+	by_category = {}
+	for rows in by_shipment.values():
+		for cat, amount in calc.landed_cost(rows)["by_category"].items():
+			by_category[cat] = round(by_category.get(cat, 0) + amount, 2)
+
+	exposure = []
+	for s in open_shipments:
+		if not s.free_time_start or s.status in ("Released", "Delivered", "Closed"):
+			continue
+		doc = frappe.get_doc("IQ Shipment", s.name)
+		d = costs.shipment_demurrage(doc)
+		if d["days"] > 0 or (d["days_left"] is not None and d["days_left"] <= 7):
+			exposure.append({
+				"name": s.name, "shipment_title": s.shipment_title, "free_time_ends": d["free_time_ends"],
+				"days": d["days"], "days_left": d["days_left"], "exposure": d["exposure"],
+				"currency": s.demurrage_currency,
+			})
+	costed = [s for s in open_shipments if s.cost_lines_count]
+	costed.sort(key=lambda s: -(s.landed_cost_total or 0))
+	return {
+		"base_currency": base,
+		"landed_cost_total": round(sum(s.landed_cost_total or 0 for s in costed), 2),
+		"estimate_total": round(sum(s.landed_cost_estimate or 0 for s in costed), 2),
+		"actual_total": round(sum(s.landed_cost_actual or 0 for s in costed), 2),
+		"shipments_costed": len(costed),
+		"shipments_uncosted": len([s for s in open_shipments if not s.cost_lines_count]),
+		"by_category": dict(sorted(by_category.items(), key=lambda kv: -kv[1])),
+		"top_shipments": costed[:8],
+		"demurrage": exposure,
+		"demurrage_note": "Exposure is in each shipment's demurrage currency; days are counted until customs release or delivery.",
+	}
 
 
 @frappe.whitelist(methods=["POST"])

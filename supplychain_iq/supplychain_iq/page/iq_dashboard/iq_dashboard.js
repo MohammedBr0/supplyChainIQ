@@ -46,6 +46,8 @@ class IQDashboard {
 		page.add_inner_button(__("Shipment"), () => frappe.new_doc("IQ Shipment"), add);
 		page.add_inner_button(__("Purchase Order"), () => frappe.new_doc("IQ Purchase Order"), add);
 		page.add_inner_button(__("Stock Balance"), () => frappe.new_doc("IQ Stock Balance"), add);
+		page.add_inner_button(__("Cost Line"), () => frappe.new_doc("IQ Cost Line"), add);
+		page.add_inner_button(__("Exchange Rate"), () => frappe.new_doc("IQ Exchange Rate"), add);
 		page.add_inner_button(__("Import Stock File"), () => new_import("Existing Stock"), add);
 		page.add_inner_button(__("Import Shipments File"), () => new_import("Inbound Shipments"), add);
 
@@ -54,6 +56,8 @@ class IQDashboard {
 		page.add_inner_button(__("Delayed Shipments"), () => frappe.set_route("List", "IQ Shipment", { is_delayed: 1 }), go);
 		page.add_inner_button(__("Stock Alerts"), () => frappe.set_route("List", "IQ Stock Balance", { stock_status: ["!=", "OK"] }), go);
 		page.add_inner_button(__("Import History"), () => frappe.set_route("List", "IQ Import Batch"), go);
+		page.add_inner_button(__("Landed Cost Report"), () => frappe.set_route("query-report", "IQ Landed Cost"), go);
+		page.add_inner_button(__("Supplier Performance"), () => frappe.set_route("query-report", "IQ Supplier Performance"), go);
 
 		page.add_menu_item(__("Download: existing stock template"), () => window.open("/assets/supplychain_iq/templates/existing_stock_template.csv"));
 		page.add_menu_item(__("Download: inbound shipments template"), () => window.open("/assets/supplychain_iq/templates/inbound_shipments_template.csv"));
@@ -99,7 +103,7 @@ class IQDashboard {
 		if (!total) return '<div class="empty">' + __("No records") + "</div>";
 		const color = (k, i) => STATUS_COLORS[k] || COLORS[i % COLORS.length];
 		const segs = entries.map(([k, v], i) => `<div title="${esc(k)}: ${v}" style="width:${(100 * v) / total}%;background:${color(k, i)}"></div>`).join("");
-		const legend = entries.map(([k, v], i) => `<span><span style="color:${color(k, i)}">&#9632;</span> ${esc(k)} ${v}</span>`).join("");
+		const legend = entries.map(([k, v], i) => `<span><span style="color:${color(k, i)}">&#9632;</span> ${esc(k)} ${Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>`).join("");
 		return `<div class="bar">${segs}</div><div class="legend">${legend}</div>`;
 	}
 
@@ -190,6 +194,42 @@ class IQDashboard {
 			], ex.top, __("No open exceptions. Click Run Checks to scan.")) + "</div>";
 			h += `<div class="iq-card"><h5>${__("Open exceptions by type")}</h5>${this.bar(ex.by_type)}<div class="iq-tiles" style="margin-top:12px">${this.tile(ex.overdue, __("Past due date"), ex.overdue ? "bad" : "ok")}</div></div>`;
 		} else h += this.locked("Exception Management");
+		h += "</div>";
+
+		const c = d.costs;
+		const money = (v) => (v == null ? "-" : Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 }));
+		h += this.section(__("Costs & suppliers"), c ? __("landed cost in {0}", [c.base_currency]) : "");
+		h += '<div class="iq-grid2">';
+		if (c) {
+			h += `<div class="iq-card"><h5>${__("Landed cost")}</h5><div class="iq-tiles">
+				${this.tile(money(c.landed_cost_total), __("Landed cost ({0})", [c.base_currency]), "", "/desk/iq-cost-line")}
+				${this.tile(money(c.actual_total), __("Actual invoiced"), "")}
+				${this.tile(money(c.estimate_total), __("Estimated"), "")}
+				${this.tile(c.shipments_uncosted, __("Shipments without costs"), c.shipments_uncosted ? "warn" : "ok", "/desk/iq-shipment?cost_lines_count=0")}
+				</div><h5 style="margin-top:12px">${__("By category")}</h5>${this.bar(c.by_category)}</div>`;
+			h += '<div class="iq-card"><h5>' + __("Highest landed cost") + "</h5>" + this.table([
+				[__("Shipment"), (r) => link("IQ Shipment", r.name, r.shipment_title)],
+				[__("Status"), (r) => esc(r.status)],
+				[__("Landed cost"), (r) => money(r.landed_cost_total)],
+				[__("Per unit"), (r) => (r.landed_cost_per_unit ? money(r.landed_cost_per_unit) + " / " + esc(r.uom || __("unit")) : "-")],
+			], c.top_shipments, __("No cost lines recorded yet")) + "</div>";
+			h += '<div class="iq-card"><h5>' + __("Demurrage watch") + "</h5>" + this.table([
+				[__("Shipment"), (r) => link("IQ Shipment", r.name, r.shipment_title)],
+				[__("Free time ends"), (r) => fmtDate(r.free_time_ends)],
+				[__("Status"), (r) => (r.days > 0 ? pill(__("{0} days charged", [r.days])).replace('class="pill ', 'class="pill High ') : pill(__("{0} days left", [r.days_left])))],
+				[__("Exposure"), (r) => money(r.exposure) + " " + esc(r.currency || "")],
+			], c.demurrage, __("No shipments near or past free time")) + `<div class="empty">${esc(c.demurrage_note)}</div></div>`;
+		} else h += this.locked("Cost Intelligence");
+		if (d.suppliers) {
+			h += '<div class="iq-card"><h5>' + __("Supplier performance (lowest on-time first)") + "</h5>" + this.table([
+				[__("Supplier"), (r) => link("IQ Supplier", r.name, r.supplier_name)],
+				[__("Measured"), (r) => esc(r.shipments_measured)],
+				[__("On time"), (r) => esc(r.on_time_rate) + "%"],
+				[__("Avg delay"), (r) => esc(r.avg_delay_days) + "d"],
+				[__("Avg transit"), (r) => (r.avg_transit_days ? esc(r.avg_transit_days) + "d" : "-")],
+				[__("PO lead time"), (r) => (r.avg_po_lead_time_days ? esc(r.avg_po_lead_time_days) + "d" : "-")],
+			], d.suppliers, __("No delivered shipments measured yet")) + "</div>";
+		} else h += this.locked("Supplier Intelligence");
 		h += "</div>";
 
 		h += this.section(__("Performance"), "");

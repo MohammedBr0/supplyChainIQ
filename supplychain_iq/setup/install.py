@@ -12,15 +12,15 @@ DEFAULT_PACKAGES = {
 		"modules": ["Shipment Control Tower", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard"],
 	},
 	"IQ Professional": {
-		"description": "Essential plus procurement links and multimodal corridor management.",
+		"description": "Essential plus procurement, multimodal corridors, landed cost and supplier performance.",
 		"max_users": 25, "max_shipments": 1000, "max_warehouses": 10, "max_import_rows": 10000,
-		"modules": ["Shipment Control Tower", "Multimodal Corridor", "Procurement Intelligence", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard"],
+		"modules": ["Shipment Control Tower", "Multimodal Corridor", "Procurement Intelligence", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard", "Cost Intelligence", "Supplier Intelligence"],
 	},
 	"IQ Enterprise": {
 		"description": "All modules, no usage limits.",
 		"max_users": 0, "max_shipments": 0, "max_warehouses": 0, "max_import_rows": 0,
 		"deployment_options": "SaaS or On-Premise",
-		"modules": ["Shipment Control Tower", "Multimodal Corridor", "Procurement Intelligence", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard"],
+		"modules": ["Shipment Control Tower", "Multimodal Corridor", "Procurement Intelligence", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard", "Cost Intelligence", "Supplier Intelligence"],
 	},
 }
 

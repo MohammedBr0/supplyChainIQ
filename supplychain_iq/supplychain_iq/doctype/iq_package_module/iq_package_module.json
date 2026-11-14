@@ -12,7 +12,7 @@
    "fieldname": "module",
    "fieldtype": "Select",
    "label": "Module",
-   "options": "Shipment Control Tower\nMultimodal Corridor\nProcurement Intelligence\nInventory Intelligence\nData Intake\nException Management\nUnified Dashboard",
+   "options": "Shipment Control Tower\nMultimodal Corridor\nProcurement Intelligence\nInventory Intelligence\nData Intake\nException Management\nUnified Dashboard\nCost Intelligence\nSupplier Intelligence",
    "reqd": 1,
    "in_list_view": 1
   }
