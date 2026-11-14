@@ -197,6 +197,157 @@
    "parenttype": "Sidebar"
   },
   {
+   "type": "Link",
+   "label": "Stock Movements",
+   "link_type": "DocType",
+   "link_to": "IQ Stock Movement",
+   "child": 1,
+   "collapsible": 0,
+   "indent": 0,
+   "keep_closed": 0,
+   "is_default_module": 0,
+   "hidden": 0,
+   "added": 0,
+   "open_in_new_tab": 0,
+   "show_arrow": 0,
+   "doctype": "Sidebar Item",
+   "parentfield": "items",
+   "parenttype": "Sidebar",
+   "idx": 11
+  },
+  {
+   "type": "Link",
+   "label": "Stock Ledger",
+   "link_type": "DocType",
+   "link_to": "IQ Stock Ledger Entry",
+   "child": 1,
+   "collapsible": 0,
+   "indent": 0,
+   "keep_closed": 0,
+   "is_default_module": 0,
+   "hidden": 0,
+   "added": 0,
+   "open_in_new_tab": 0,
+   "show_arrow": 0,
+   "doctype": "Sidebar Item",
+   "parentfield": "items",
+   "parenttype": "Sidebar",
+   "idx": 12
+  },
+  {
+   "type": "Link",
+   "label": "Stock Summary",
+   "link_type": "Report",
+   "link_to": "IQ Stock Summary",
+   "child": 1,
+   "collapsible": 0,
+   "indent": 0,
+   "keep_closed": 0,
+   "is_default_module": 0,
+   "hidden": 0,
+   "added": 0,
+   "open_in_new_tab": 0,
+   "show_arrow": 0,
+   "doctype": "Sidebar Item",
+   "parentfield": "items",
+   "parenttype": "Sidebar",
+   "idx": 13
+  },
+  {
+   "type": "Section Break",
+   "label": "Distribution",
+   "icon": "truck",
+   "child": 0,
+   "collapsible": 1,
+   "indent": 1,
+   "keep_closed": 0,
+   "is_default_module": 0,
+   "hidden": 0,
+   "added": 0,
+   "open_in_new_tab": 0,
+   "show_arrow": 0,
+   "doctype": "Sidebar Item",
+   "parentfield": "items",
+   "parenttype": "Sidebar",
+   "idx": 14
+  },
+  {
+   "type": "Link",
+   "label": "Deliveries",
+   "link_type": "DocType",
+   "link_to": "IQ Delivery",
+   "child": 1,
+   "collapsible": 0,
+   "indent": 0,
+   "keep_closed": 0,
+   "is_default_module": 0,
+   "hidden": 0,
+   "added": 0,
+   "open_in_new_tab": 0,
+   "show_arrow": 0,
+   "doctype": "Sidebar Item",
+   "parentfield": "items",
+   "parenttype": "Sidebar",
+   "idx": 15
+  },
+  {
+   "type": "Section Break",
+   "label": "Cold Chain",
+   "icon": "thermometer-snowflake",
+   "child": 0,
+   "collapsible": 1,
+   "indent": 1,
+   "keep_closed": 0,
+   "is_default_module": 0,
+   "hidden": 0,
+   "added": 0,
+   "open_in_new_tab": 0,
+   "show_arrow": 0,
+   "doctype": "Sidebar Item",
+   "parentfield": "items",
+   "parenttype": "Sidebar",
+   "idx": 16
+  },
+  {
+   "type": "Link",
+   "label": "Temperature Logs",
+   "link_type": "DocType",
+   "link_to": "IQ Temperature Log",
+   "child": 1,
+   "collapsible": 0,
+   "indent": 0,
+   "keep_closed": 0,
+   "is_default_module": 0,
+   "hidden": 0,
+   "added": 0,
+   "open_in_new_tab": 0,
+   "show_arrow": 0,
+   "doctype": "Sidebar Item",
+   "parentfield": "items",
+   "parenttype": "Sidebar",
+   "idx": 17
+  },
+  {
+   "type": "Link",
+   "label": "Stock on QA Hold",
+   "link_type": "DocType",
+   "link_to": "IQ Stock Balance",
+   "child": 1,
+   "collapsible": 0,
+   "indent": 0,
+   "keep_closed": 0,
+   "is_default_module": 0,
+   "hidden": 0,
+   "added": 0,
+   "open_in_new_tab": 0,
+   "show_arrow": 0,
+   "doctype": "Sidebar Item",
+   "parentfield": "items",
+   "parenttype": "Sidebar",
+   "idx": 18,
+   "filters": "[[\"IQ Stock Balance\", \"qa_status\", \"=\", \"Quarantined\"]]"
+  },
+  {
    "type": "Section Break",
    "label": "Costs & Suppliers",
    "icon": "wallet",
@@ -212,7 +363,7 @@
    "doctype": "Sidebar Item",
    "parentfield": "items",
    "parenttype": "Sidebar",
-   "idx": 11
+   "idx": 19
   },
   {
    "type": "Link",
@@ -231,7 +382,7 @@
    "doctype": "Sidebar Item",
    "parentfield": "items",
    "parenttype": "Sidebar",
-   "idx": 12
+   "idx": 20
   },
   {
    "type": "Link",
@@ -250,7 +401,7 @@
    "doctype": "Sidebar Item",
    "parentfield": "items",
    "parenttype": "Sidebar",
-   "idx": 13
+   "idx": 21
   },
   {
    "type": "Link",
@@ -269,7 +420,7 @@
    "doctype": "Sidebar Item",
    "parentfield": "items",
    "parenttype": "Sidebar",
-   "idx": 14
+   "idx": 22
   },
   {
    "type": "Link",
@@ -288,7 +439,7 @@
    "doctype": "Sidebar Item",
    "parentfield": "items",
    "parenttype": "Sidebar",
-   "idx": 15
+   "idx": 23
   },
   {
    "type": "Section Break",
@@ -303,7 +454,7 @@
    "added": 0,
    "open_in_new_tab": 0,
    "show_arrow": 0,
-   "idx": 16,
+   "idx": 24,
    "doctype": "Sidebar Item",
    "parentfield": "items",
    "parenttype": "Sidebar"
@@ -322,7 +473,7 @@
    "added": 0,
    "open_in_new_tab": 0,
    "show_arrow": 0,
-   "idx": 17,
+   "idx": 25,
    "doctype": "Sidebar Item",
    "parentfield": "items",
    "parenttype": "Sidebar"
@@ -340,7 +491,7 @@
    "added": 0,
    "open_in_new_tab": 0,
    "show_arrow": 0,
-   "idx": 18,
+   "idx": 26,
    "doctype": "Sidebar Item",
    "parentfield": "items",
    "parenttype": "Sidebar"
@@ -359,7 +510,7 @@
    "added": 0,
    "open_in_new_tab": 0,
    "show_arrow": 0,
-   "idx": 19,
+   "idx": 27,
    "doctype": "Sidebar Item",
    "parentfield": "items",
    "parenttype": "Sidebar"
@@ -378,7 +529,7 @@
    "added": 0,
    "open_in_new_tab": 0,
    "show_arrow": 0,
-   "idx": 20,
+   "idx": 28,
    "doctype": "Sidebar Item",
    "parentfield": "items",
    "parenttype": "Sidebar"
@@ -397,13 +548,13 @@
    "added": 0,
    "open_in_new_tab": 0,
    "show_arrow": 0,
-   "idx": 21,
+   "idx": 29,
    "doctype": "Sidebar Item",
    "parentfield": "items",
    "parenttype": "Sidebar"
   }
  ],
- "modified": "2026-11-14 17:00:00.000000",
+ "modified": "2026-11-14 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "SupplyChain IQ",
  "name": "SupplyChain IQ",

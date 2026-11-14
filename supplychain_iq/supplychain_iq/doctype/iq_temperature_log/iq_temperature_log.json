@@ -1,0 +1,233 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-11-14 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "organization",
+  "reading_time",
+  "temperature",
+  "logger_id",
+  "location_type",
+  "warehouse",
+  "shipment",
+  "col1",
+  "item",
+  "batch_no",
+  "range_source",
+  "min_allowed",
+  "max_allowed",
+  "is_excursion",
+  "deviation",
+  "quarantined_lines",
+  "source_import"
+ ],
+ "fields": [
+  {
+   "fieldname": "organization",
+   "fieldtype": "Link",
+   "label": "Organization",
+   "options": "IQ Organization",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "description": "Set automatically from your organization membership."
+  },
+  {
+   "fieldname": "reading_time",
+   "fieldtype": "Datetime",
+   "label": "Reading Time",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "temperature",
+   "fieldtype": "Float",
+   "label": "Temperature (°C)",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "logger_id",
+   "fieldtype": "Data",
+   "label": "Logger ID",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "location_type",
+   "fieldtype": "Select",
+   "label": "Location Type",
+   "options": "Warehouse\nShipment",
+   "reqd": 1,
+   "default": "Warehouse"
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "IQ Warehouse",
+   "depends_on": "eval:doc.location_type=='Warehouse'",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "shipment",
+   "fieldtype": "Link",
+   "label": "Shipment",
+   "options": "IQ Shipment",
+   "depends_on": "eval:doc.location_type=='Shipment'",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "col1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "label": "Item",
+   "options": "IQ Item",
+   "description": "Optional: limit the reading to one item (and batch)."
+  },
+  {
+   "fieldname": "batch_no",
+   "fieldtype": "Data",
+   "label": "Batch / Lot No"
+  },
+  {
+   "fieldname": "range_source",
+   "fieldtype": "Data",
+   "label": "Range Source",
+   "read_only": 1
+  },
+  {
+   "fieldname": "min_allowed",
+   "fieldtype": "Float",
+   "label": "Min Allowed (°C)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "max_allowed",
+   "fieldtype": "Float",
+   "label": "Max Allowed (°C)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "is_excursion",
+   "fieldtype": "Check",
+   "label": "Excursion",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "deviation",
+   "fieldtype": "Float",
+   "label": "Deviation (°C)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "quarantined_lines",
+   "fieldtype": "Int",
+   "label": "Stock Lines Put on QA Hold",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_import",
+   "fieldtype": "Link",
+   "label": "Source Import",
+   "options": "IQ Import Batch",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-14 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SupplyChain IQ",
+ "name": "IQ Temperature Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Org Admin",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Warehouse Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 1,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ QA Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 1,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ Logistics Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 1,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ Viewer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "TMP-.########",
+ "naming_rule": "Expression (old style)",
+ "search_fields": "logger_id,warehouse,shipment"
+}

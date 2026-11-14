@@ -47,6 +47,19 @@ Allocation is per shipment and per unit by shipment quantity. Each shipment carr
 ## ADR-7: Tenancy hook runs on before_validate
 The organization is stamped and verified in `before_validate`, before any controller logic. Controllers can therefore rely on `self.organization`, for example for entitlement checks and base currency.
 
+## ADR-8: Ledger-driven stock (stage 6)
+Stock balances stay the fast read model; `IQ Stock Ledger Entry` is the audit trail. Submitted movements post through `intelligence/stock.py`, which is the only code allowed to change a ledger-managed quantity. Cancelling a movement posts reversing entries and refuses if the stock has already been consumed.
+
+FEFO considers only issuable stock: released by QA and not expired. Batches without an expiry date go last. Adjustment Out may remove expired or rejected stock (disposal), but only with a reason.
+
+## ADR-9: Cold-chain holds are automatic, releases are human (stage 6)
+An out-of-range reading puts released cold-chain stock in that location (and item or batch, if given) into `Quarantined`. A shipment-level excursion holds cold-chain stock when that shipment is received.
+
+QA fields can only change through `set_qa_decision`, which requires the QA Officer or Org Admin role and notes. Temperature readings cannot be edited after saving.
+
+## ADR-10: Dismissed exceptions stay dismissed
+For persistent conditions, such as a short delivery, a user can mark the exception **Dismissed** with notes, and the engine will not raise it again. **Resolved** exceptions are re-raised if the condition still holds on the next run.
+
 ## Next stages
 5. Regulatory privileges, diplomatic ID and LC workflows (source-linked rules, reviewer approval).
 6. Multimodal corridor analytics, cold chain, distribution.

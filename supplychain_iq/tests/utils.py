@@ -46,7 +46,7 @@ def ensure_package(name, modules, **limits):
 
 def purge_org_records(org):
 	frappe.set_user("Administrator")
-	for dt in ("IQ Exception", "IQ Cost Line", "IQ Exchange Rate", "IQ Stock Balance", "IQ Shipment", "IQ Import Batch", "IQ Purchase Order", "IQ Item", "IQ Warehouse", "IQ Supplier"):
+	for dt in ("IQ Exception", "IQ Cost Line", "IQ Exchange Rate", "IQ Temperature Log", "IQ Delivery", "IQ Stock Ledger Entry", "IQ Stock Balance", "IQ Shipment", "IQ Import Batch", "IQ Purchase Order", "IQ Item", "IQ Warehouse", "IQ Supplier"):
 		for name in frappe.get_all(dt, filters={"organization": org}, pluck="name"):
 			frappe.delete_doc(dt, name, force=True, ignore_permissions=True)
 	tenancy.clear_cache()

@@ -18,6 +18,9 @@ MODULES = (
 	"Unified Dashboard",
 	"Cost Intelligence",
 	"Supplier Intelligence",
+	"Warehouse & Batch Control",
+	"Distribution & Delivery",
+	"Cold Chain Intelligence",
 )
 
 # DocType -> module that must be entitled. DocTypes not listed are core
@@ -32,11 +35,16 @@ DOCTYPE_MODULE = {
 	"IQ Exception": "Exception Management",
 	"IQ Cost Line": "Cost Intelligence",
 	"IQ Exchange Rate": "Cost Intelligence",
+	"IQ Stock Movement": "Warehouse & Batch Control",
+	"IQ Stock Ledger Entry": "Warehouse & Batch Control",
+	"IQ Delivery": "Distribution & Delivery",
+	"IQ Temperature Log": "Cold Chain Intelligence",
 }
 
 IMPORT_TYPE_MODULE = {
 	"Existing Stock": "Inventory Intelligence",
 	"Inbound Shipments": "Shipment Control Tower",
+	"Temperature Readings": "Cold Chain Intelligence",
 }
 
 

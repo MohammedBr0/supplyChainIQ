@@ -313,6 +313,10 @@ _TENANT = {
 	"IQ Exception": "exception_pqc",
 	"IQ Cost Line": "cost_line_pqc",
 	"IQ Exchange Rate": "exchange_rate_pqc",
+	"IQ Stock Movement": "stock_movement_pqc",
+	"IQ Stock Ledger Entry": "stock_ledger_pqc",
+	"IQ Delivery": "delivery_pqc",
+	"IQ Temperature Log": "temperature_log_pqc",
 }
 
 permission_query_conditions = {dt: f"supplychain_iq.tenancy.{fn}" for dt, fn in _TENANT.items()}

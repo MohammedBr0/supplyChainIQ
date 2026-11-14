@@ -23,6 +23,7 @@ ORGS = {
 			("relief.admin@demo.example", "Relief", "Admin", "Org Admin"),
 			("relief.logistics@demo.example", "Relief", "Logistics", "Logistics Officer"),
 			("relief.warehouse@demo.example", "Relief", "Warehouse", "Warehouse Officer"),
+			("relief.qa@demo.example", "Relief", "QA", "QA Officer"),
 		],
 	},
 	"Demo Pharma Importer": {
@@ -40,8 +41,6 @@ def create_demo(password: str | None = None):
 	after_install()
 	frappe.set_user("Administrator")
 	for org_name, spec in ORGS.items():
-		if frappe.db.exists("IQ Organization", org_name):
-			continue
 		for email, first, last, _role in spec["users"]:
 			if not frappe.db.exists("User", email):
 				u = frappe.get_doc({
@@ -49,6 +48,16 @@ def create_demo(password: str | None = None):
 					"send_welcome_email": 0, "user_type": "System User", "new_password": password,
 				})
 				u.insert(ignore_permissions=True)
+		if frappe.db.exists("IQ Organization", org_name):
+			# demo users added in later releases join the existing demo organization
+			org = frappe.get_doc("IQ Organization", org_name)
+			have = {m.user for m in org.members}
+			missing = [(e, r) for e, _f, _l, r in spec["users"] if e not in have]
+			for e, r in missing:
+				org.append("members", {"user": e, "iq_role": r})
+			if missing:
+				org.save()
+			continue
 		org = frappe.get_doc({
 			"doctype": "IQ Organization", "organization_name": org_name,
 			"organization_type": spec["organization_type"], "package": spec["package"],
@@ -59,6 +68,7 @@ def create_demo(password: str | None = None):
 
 	_relief_data("Demo Relief Org")
 	_relief_costs("Demo Relief Org")
+	_relief_operations("Demo Relief Org")
 	_pharma_data("Demo Pharma Importer")
 	for org in ORGS:
 		run_for_organization(org)
@@ -202,6 +212,71 @@ def _relief_costs(org):
 			"doctype": "IQ Cost Line", **o, "shipment": ship, "cost_category": cat, "cost_status": status,
 			"currency": cur, "amount": amount, "cost_date": _d(days), "vendor": vendor,
 			"description": "Synthetic demo cost",
+		}).insert()
+
+
+def _relief_operations(org):
+	"""Stage 6 demo: movements, deliveries, cold room readings (synthetic)."""
+	if frappe.db.exists("IQ Stock Movement", {"organization": org}):
+		return
+	o = {"organization": org}
+	central = frappe.db.get_value("IQ Warehouse", {**o, "warehouse_name": "Addis Ababa Central Warehouse"})
+	dire = frappe.db.get_value("IQ Warehouse", {**o, "warehouse_name": "Dire Dawa Regional Warehouse"})
+	cold = _get_or_create("IQ Warehouse", {**o, "warehouse_name": "Addis Cold Room"}, {
+		"city": "Addis Ababa", "warehouse_type": "Cold Store", "temperature_controlled": 1, "min_temperature": 2, "max_temperature": 8,
+	})
+	item = lambda code: frappe.db.get_value("IQ Item", {**o, "item_code": code})  # noqa: E731
+	if not (central and dire and item("DEMO-ORS")):
+		return
+
+	def move(mtype, rows, days, **kw):
+		mv = frappe.get_doc({"doctype": "IQ Stock Movement", **o, "movement_type": mtype, "posting_date": _d(days), "items": rows, **kw})
+		mv.insert()
+		mv.submit()
+		return mv
+
+	move("Receipt", [
+		{"item": item("DEMO-ORS"), "batch_no": "ORS-B9", "expiry_date": _d(500), "quantity": 2000},
+		{"item": item("DEMO-AMX500"), "batch_no": "AMX-B5", "expiry_date": _d(600), "quantity": 150},
+	], -20, to_warehouse=central)
+	move("Receipt", [{"item": item("DEMO-VAC-M"), "batch_no": "VAC-B9", "expiry_date": _d(300), "quantity": 200}], -12, to_warehouse=cold)
+	move("Transfer", [{"item": item("DEMO-ORS"), "quantity": 600}], -10, from_warehouse=central, to_warehouse=dire,
+		reason="Pre-positioning for the regional response")
+	move("Adjustment Out", [{"item": item("DEMO-VAC-M"), "batch_no": "VAC-B3", "quantity": 150}], -4, from_warehouse=central,
+		reason="Disposal of expired vials (witnessed destruction)")
+
+	pod = frappe.get_doc({"doctype": "File", "file_name": "demo-proof-of-delivery.txt", "is_private": 1,
+		"content": b"Synthetic demo proof of delivery - signed by facility pharmacist"})
+	pod.flags.ignore_permissions = True
+	pod.insert()
+	d1 = frappe.get_doc({
+		"doctype": "IQ Delivery", **o, "recipient": "Example Health Centre, Adama", "recipient_type": "Health Facility",
+		"destination": "Adama", "from_warehouse": central, "planned_delivery_date": _d(-6), "transport_reference": "DEMO-TRIP-031",
+		"items": [{"item": item("DEMO-ORS"), "quantity": 400}, {"item": item("DEMO-AMX500"), "quantity": 60}],
+	}).insert()
+	d1.dispatch()
+	d1.reload()
+	d1.delivered_on, d1.received_by, d1.proof_of_delivery = _d(-5), "Facility pharmacist (demo)", pod.file_url
+	d1.items[0].delivered_qty, d1.items[1].delivered_qty = 400, 55
+	d1.save()
+	d1.confirm_delivery()
+	frappe.get_doc({
+		"doctype": "IQ Delivery", **o, "recipient": "Example Nutrition Site, Jijiga", "recipient_type": "Beneficiary Site",
+		"destination": "Jijiga", "from_warehouse": dire, "planned_delivery_date": _d(-2),
+		"items": [{"item": item("DEMO-ORS"), "quantity": 200}],
+	}).insert()
+	frappe.get_doc({
+		"doctype": "IQ Delivery", **o, "recipient": "Example Hospital, Hawassa", "recipient_type": "Health Facility",
+		"destination": "Hawassa", "from_warehouse": central, "planned_delivery_date": _d(4),
+		"items": [{"item": item("DEMO-NET"), "quantity": 500}],
+	}).insert()
+
+	from frappe.utils import add_to_date, now_datetime
+
+	for hours, temp in ((-30, 4.6), (-24, 5.2), (-18, 5.9), (-12, 9.6), (-6, 6.1)):
+		frappe.get_doc({
+			"doctype": "IQ Temperature Log", **o, "location_type": "Warehouse", "warehouse": cold, "logger_id": "DEMO-LOGGER-07",
+			"reading_time": add_to_date(now_datetime(), hours=hours), "temperature": temp,
 		}).insert()
 
 

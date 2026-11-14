@@ -21,7 +21,14 @@
   "days_to_expiry",
   "col2",
   "stock_status",
-  "source_import"
+  "source_import",
+  "qa_section",
+  "qa_status",
+  "qa_hold_reason",
+  "col_qa",
+  "qa_decision_notes",
+  "qa_decided_by",
+  "qa_decided_on"
  ],
  "fields": [
   {
@@ -131,7 +138,7 @@
    "fieldname": "stock_status",
    "fieldtype": "Select",
    "label": "Stock Status",
-   "options": "OK\nLow\nOut of Stock\nExpiring Soon\nExpired",
+   "options": "OK\nLow\nOut of Stock\nExpiring Soon\nExpired\nQA Hold",
    "read_only": 1,
    "in_list_view": 1,
    "in_standard_filter": 1
@@ -142,12 +149,56 @@
    "label": "Source Import",
    "options": "IQ Import Batch",
    "read_only": 1
+  },
+  {
+   "fieldname": "qa_section",
+   "fieldtype": "Section Break",
+   "label": "Quality / QA Status",
+   "description": "Quarantined or rejected stock cannot be issued or transferred. Only a QA Officer or Org Admin can record a QA decision; IQ never releases stock automatically."
+  },
+  {
+   "fieldname": "qa_status",
+   "fieldtype": "Select",
+   "label": "QA Status",
+   "options": "Released\nQuarantined\nRejected",
+   "default": "Released",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "qa_hold_reason",
+   "fieldtype": "Small Text",
+   "label": "QA Hold Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_qa",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "qa_decision_notes",
+   "fieldtype": "Small Text",
+   "label": "QA Decision Notes",
+   "read_only": 1
+  },
+  {
+   "fieldname": "qa_decided_by",
+   "fieldtype": "Link",
+   "label": "QA Decided By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "qa_decided_on",
+   "fieldtype": "Datetime",
+   "label": "QA Decided On",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 0,
  "istable": 0,
  "links": [],
- "modified": "2026-11-14 12:00:00.000000",
+ "modified": "2026-11-14 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "SupplyChain IQ",
  "name": "IQ Stock Balance",
@@ -203,6 +254,18 @@
   },
   {
    "role": "IQ Viewer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  },
+  {
+   "role": "IQ QA Officer",
    "read": 1,
    "report": 1,
    "export": 1,

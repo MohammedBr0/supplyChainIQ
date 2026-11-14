@@ -3,7 +3,7 @@
 frappe.ui.form.on("IQ Import Batch", {
 	refresh(frm) {
 		if (frm.is_new()) return;
-		const type = frm.doc.import_type === "Existing Stock" ? "existing_stock" : "inbound_shipments";
+		const type = { "Existing Stock": "existing_stock", "Inbound Shipments": "inbound_shipments", "Temperature Readings": "temperature_readings" }[frm.doc.import_type];
 		frm.add_custom_button(__("Download Template"), () => {
 			window.open(`/assets/supplychain_iq/templates/${type}_template.csv`);
 		});

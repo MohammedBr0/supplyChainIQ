@@ -6,7 +6,7 @@ It complements ERP and government systems rather than replacing them. Customers 
 
 This repository **is** the Frappe app. Clone it into `frappe-bench/apps/supplychain_iq`, or let the Dockerfile do that for you.
 
-### What is built (blueprint stages 1–4)
+### What is built (blueprint stages 1–4 and 6)
 
 | Area | What works |
 | --- | --- |
@@ -19,9 +19,12 @@ This repository **is** the Frappe app. Clone it into `frappe-bench/apps/supplych
 | Intelligence | Deterministic exception rules (delays, overdue milestones, missing documents, stock out, low cover, expiry), each with its evidence. Duplicates are suppressed, cleared conditions auto-resolve, and the rules run daily or on demand. |
 | Cost Intelligence (stage 4) | `IQ Exchange Rate` records each rate with its source and date. `IQ Cost Line` holds estimate and actual costs by category (purchase, freight, insurance, duties, clearance, port, storage, demurrage, inland, distribution), each converted to base currency using the latest rate on or before the cost date (or a manual rate with a note). Each shipment rolls these up into a landed cost and a per-unit cost, with actuals replacing estimates per category. Demurrage is calculated from free time and the daily rate. Exception rules flag demurrage and cost overruns. The **IQ Landed Cost** report gives a breakdown for each shipment. |
 | Supplier Intelligence (stage 4) | On-time arrival rate, average delay, transit time and PO lead time for each supplier, recalculated whenever a shipment changes and daily. The **IQ Supplier Performance** report shows the same figures. |
+| Warehouse and batch control (stage 6) | `IQ Stock Movement` (receipt, issue, transfer, adjustment in/out) is submitted and cancelled like an accounting document, and posts to an append-only `IQ Stock Ledger Entry`. Issues and transfers allocate batches by **FEFO**, skipping expired and QA-held stock. Once a stock line has ledger history, its quantity can only change through a movement. Receipts against a shipment mark it received and flag quantity discrepancies. Imported stock counts are written to the ledger. The **IQ Stock Summary** report shows issuable, on-hold and expired stock, consumption from recorded issues, and stock cover. |
+| Distribution and delivery (stage 6) | `IQ Delivery`: dispatch issues the stock by FEFO and records which batches went where. Confirming delivery requires the delivered date, the receiver and an attached proof of delivery. Partial deliveries and on-time delivery are tracked, and a cancelled dispatch returns the stock. |
+| Cold chain (stage 6) | `IQ Temperature Log` readings are typed in or imported from logger CSV/XLSX, and checked against the item or warehouse range. They cannot be edited after saving. An excursion **puts the affected cold-chain stock on QA hold automatically**, and cargo received from a shipment that had an excursion is held on arrival. Only a QA Officer or Org Admin can release or reject stock, with notes; IQ never releases stock on its own. |
 | Unified dashboard | `/desk/iq-dashboard` is the main route: root, login and the apps screen land on it. Sections cover upstream, in transit, downstream, intelligence and performance, scoped to the user's organization. A grouped SupplyChain IQ sidebar and Add/View quick-action menus are included. |
 
-Not built yet: regulatory privileges, diplomatic ID and LC workflows (stage 5), cold chain, distribution and warehouse movements (stage 6), integrations (stage 7) and document/AI extraction.
+Not built yet: regulatory privileges, diplomatic ID and LC workflows (stage 5), integrations (stage 7), document/AI extraction, returns workflow and item-level shipment lines.
 
 ### Local development
 
@@ -54,6 +57,7 @@ The demo creates two **synthetic** organizations, so you can check that each one
 | `relief.admin@demo.example` | Demo Relief Org / IQ Professional | Org Admin |
 | `relief.logistics@demo.example` | Demo Relief Org | Logistics Officer |
 | `relief.warehouse@demo.example` | Demo Relief Org | Warehouse Officer |
+| `relief.qa@demo.example` | Demo Relief Org | QA Officer |
 | `pharma.admin@demo.example` | Demo Pharma Importer / IQ Essential | Org Admin |
 
 ### Tests
@@ -66,7 +70,7 @@ bench --site development.localhost set-config allow_tests true
 bench --site development.localhost run-tests --app supplychain_iq
 ```
 
-The 46 tests cover cost intelligence (rate resolution, landed cost roll-up, demurrage, overruns, supplier performance), as well as tenant isolation, entitlements and limits, the import pipeline (mapping, validation, preview gating, immutability, Ethiopian dates), calculations, exception lifecycle and dashboard scoping.
+The 65 tests cover warehouse movements (FEFO, ledger, cancellation, transfers, quantity locking, shipment receipts), deliveries (dispatch, proof of delivery, shortfalls, cancellation) and cold chain (excursions, QA hold and release permissions, logger import), as well as cost intelligence (rate resolution, landed cost roll-up, demurrage, overruns, supplier performance), as well as tenant isolation, entitlements and limits, the import pipeline (mapping, validation, preview gating, immutability, Ethiopian dates), calculations, exception lifecycle and dashboard scoping.
 
 ### Deployment (Render + Neon)
 

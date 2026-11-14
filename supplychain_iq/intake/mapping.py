@@ -28,6 +28,15 @@ SCHEMAS = {
 		"expiry_date": (False, ["expiry_date", "expiry", "exp_date", "expiration_date", "best_before", "expires"]),
 		"avg_monthly_consumption": (False, ["avg_monthly_consumption", "amc", "monthly_consumption", "average_monthly_consumption", "avg_consumption", "consumption"]),
 	},
+	"Temperature Readings": {
+		"reading_time": (True, ["reading_time", "timestamp", "date_time", "datetime", "time", "date", "recorded_at", "reading_date"]),
+		"temperature": (True, ["temperature", "temp", "temperature_c", "temp_c", "value", "reading", "deg_c"]),
+		"logger_id": (False, ["logger_id", "logger", "device", "device_id", "sensor", "sensor_id", "serial", "serial_number"]),
+		"warehouse": (False, ["warehouse", "store", "location", "cold_room", "site"]),
+		"shipment": (False, ["shipment", "shipment_id", "awb", "bl", "awb_bl_number", "consignment"]),
+		"item_code": (False, ["item_code", "item", "sku", "product_code"]),
+		"batch_no": (False, ["batch_no", "batch", "lot", "lot_no"]),
+	},
 	"Inbound Shipments": {
 		"shipment_title": (True, ["shipment_title", "commodity", "description", "cargo", "goods", "cargo_description"]),
 		"awb_bl_number": (False, ["awb_bl_number", "awb", "bl", "bl_number", "awb_number", "bill_of_lading", "awb_bl", "tracking_number"]),

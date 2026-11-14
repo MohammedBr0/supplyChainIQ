@@ -149,6 +149,9 @@ def get_dashboard_data(organization: str | None = None):
 			limit=10,
 		)
 
+	if ent.modules & {"Warehouse & Batch Control", "Distribution & Delivery", "Cold Chain Intelligence"}:
+		data["operations"] = operations_section(org, t, ent.modules)
+
 	if "Data Intake" in ent.modules:
 		data["imports"] = frappe.get_all(
 			"IQ Import Batch",
@@ -158,6 +161,51 @@ def get_dashboard_data(organization: str | None = None):
 			limit=5,
 		)
 	return data
+
+
+def operations_section(org, t, modules):
+	out = {}
+	f = {"organization": org}
+	if "Warehouse & Batch Control" in modules:
+		since = add_days(t, -30)
+		moves = frappe.get_all(
+			"IQ Stock Movement",
+			filters={**f, "docstatus": 1, "posting_date": [">=", since]},
+			fields=["name", "movement_type", "posting_date", "total_quantity", "from_warehouse", "to_warehouse"],
+			order_by="posting_date desc, creation desc",
+		)
+		out["movements_30d"] = _count_by(moves, "movement_type")
+		out["recent_movements"] = moves[:8]
+		out["draft_movements"] = frappe.db.count("IQ Stock Movement", {**f, "docstatus": 0})
+	if "Distribution & Delivery" in modules:
+		deliveries = frappe.get_all(
+			"IQ Delivery",
+			filters={**f, "status": ["!=", "Cancelled"]},
+			fields=["name", "recipient", "destination", "status", "planned_delivery_date", "delivered_on", "on_time"],
+			order_by="planned_delivery_date asc",
+		)
+		done = [d for d in deliveries if d.status in ("Delivered", "Partially Delivered")]
+		out["deliveries"] = {
+			"to_dispatch": sum(1 for d in deliveries if d.status == "Draft"),
+			"in_transit": sum(1 for d in deliveries if d.status == "Dispatched"),
+			"overdue": sum(1 for d in deliveries if d.status in ("Draft", "Dispatched") and getdate(d.planned_delivery_date) < t),
+			"short": sum(1 for d in deliveries if d.status == "Partially Delivered"),
+			"delivered": len(done),
+			"on_time_rate": round(100.0 * sum(1 for d in done if d.on_time) / len(done), 1) if done else None,
+			"open_list": [d for d in deliveries if d.status in ("Draft", "Dispatched")][:8],
+		}
+	if "Cold Chain Intelligence" in modules or "Warehouse & Batch Control" in modules:
+		out["qa_hold"] = frappe.get_all(
+			"IQ Stock Balance",
+			filters={**f, "qa_status": "Quarantined", "quantity": [">", 0]},
+			fields=["name", "item_name", "item", "warehouse", "batch_no", "quantity", "uom", "qa_hold_reason"],
+		)
+	if "Cold Chain Intelligence" in modules:
+		out["excursions_7d"] = frappe.db.count(
+			"IQ Temperature Log", {**f, "is_excursion": 1, "reading_time": [">=", add_days(t, -7)]}
+		)
+		out["readings_7d"] = frappe.db.count("IQ Temperature Log", {**f, "reading_time": [">=", add_days(t, -7)]})
+	return out
 
 
 def cost_section(org, t):

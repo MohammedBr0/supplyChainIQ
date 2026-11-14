@@ -12,10 +12,10 @@ import re
 
 import frappe
 from frappe import _
-from frappe.utils import now_datetime, today
+from frappe.utils import flt, now_datetime, today
 
 from supplychain_iq.entitlements import check_usage_limit, get_entitlements
-from supplychain_iq.intake.dates import DateParseError, parse_date
+from supplychain_iq.intake.dates import DateParseError, parse_date, parse_datetime
 from supplychain_iq.intake.mapping import detect_mapping, missing_required, validate_mapping
 
 MAX_ROWS_HARD_LIMIT = 20000
@@ -295,6 +295,60 @@ class Validator:
 		return row
 
 
+def _validate_temperature(self, number, rec, seen):
+	row = RowResult(number)
+	d = row.data
+	try:
+		ts = parse_datetime(rec.get("reading_time"))
+	except DateParseError as e:
+		ts = None
+		row.errors.append(f"reading_time: {e}")
+	if not ts and not any(e.startswith("reading_time") for e in row.errors):
+		row.errors.append("reading_time is required")
+	d["reading_time"] = ts.isoformat(sep=" ") if ts else None
+	try:
+		d["temperature"] = to_number(rec.get("temperature"))
+	except ValueError as e:
+		d["temperature"] = None
+		row.errors.append(f"temperature: {e}")
+	if d["temperature"] is None and not any(e.startswith("temperature") for e in row.errors):
+		row.errors.append("temperature is required")
+	elif d["temperature"] is not None and not (-90 <= d["temperature"] <= 60):
+		row.errors.append(f"temperature {d['temperature']} is outside the plausible range -90..60 °C")
+	for f in ("logger_id", "batch_no"):
+		v = clean(rec.get(f))
+		d[f] = str(v) if v is not None else None
+
+	wh, shp = clean(rec.get("warehouse")), clean(rec.get("shipment"))
+	if wh:
+		d["warehouse_id"] = self.find_warehouse(wh)
+		if not d["warehouse_id"]:
+			row.errors.append(f"warehouse '{wh}' not found")
+	elif shp:
+		d["shipment_id"] = self.find("IQ Shipment", "name", shp) or self.find("IQ Shipment", "awb_bl_number", shp)
+		if not d["shipment_id"]:
+			row.errors.append(f"shipment '{shp}' not found (use the IQ shipment ID or AWB/BL number)")
+	else:
+		row.errors.append("warehouse or shipment is required")
+
+	code = clean(rec.get("item_code"))
+	if code:
+		d["item_id"] = self.find("IQ Item", "item_code", code)
+		if not d["item_id"]:
+			row.errors.append(f"item '{code}' not found")
+	key = (d.get("logger_id"), d["reading_time"], d.get("warehouse_id") or d.get("shipment_id"))
+	if d["reading_time"] and key in seen:
+		row.errors.append(f"duplicate of row {seen[key]}")
+	elif d["reading_time"]:
+		seen[key] = number
+	if not row.errors:
+		row.data["preview_note"] = "excursion check happens on import against the item or warehouse range"
+	return row
+
+
+Validator.validate_temperature = _validate_temperature
+
+
 # ---------------------------------------------------------------- pipeline
 
 
@@ -334,7 +388,11 @@ def run_validation(batch) -> dict:
 	results = []
 	if not batch_errors:
 		seen = {}
-		fn = validator.validate_stock if batch.import_type == "Existing Stock" else validator.validate_shipment
+		fn = {
+			"Existing Stock": validator.validate_stock,
+			"Inbound Shipments": validator.validate_shipment,
+			"Temperature Readings": validator.validate_temperature,
+		}[batch.import_type]
 		for i, raw in enumerate(raw_rows, start=2):  # row 1 is the header
 			rec = {mapping[h]: v for h, v in zip(headers, raw, strict=False) if mapping.get(h)}
 			results.append(fn(i, rec, seen))
@@ -410,7 +468,11 @@ def confirm_import(batch):
 	if result["fuzzy"] and not batch.mapping_confirmed:
 		frappe.throw(_("Some columns were mapped by similarity. Check the mapping and tick Mapping Confirmed."))
 
-	writer = StockWriter(batch) if batch.import_type == "Existing Stock" else ShipmentWriter(batch)
+	writer = {
+		"Existing Stock": StockWriter,
+		"Inbound Shipments": ShipmentWriter,
+		"Temperature Readings": TemperatureWriter,
+	}[batch.import_type](batch)
 	created = updated = 0
 	for r in result["rows"]:
 		c, u = writer.write(r.data)
@@ -477,10 +539,17 @@ class StockWriter(_Writer):
 			"avg_monthly_consumption": d.get("avg_monthly_consumption"),
 			"source_import": self.batch.name,
 		}
+		# an imported count is recorded in the stock ledger as a count adjustment
+		from supplychain_iq.intelligence.stock import write_ledger
+
 		if existing:
 			doc = frappe.get_doc("IQ Stock Balance", existing)
+			delta = flt(d["quantity"]) - flt(doc.quantity)
 			doc.update(values)
+			doc.flags.iq_from_ledger = True
 			doc.save()
+			if delta:
+				write_ledger(self.org, doc, delta, today(), "Stock Count (Import)", "IQ Import Batch", self.batch.name)
 			return 0, 1
 		doc = frappe.get_doc(
 			{
@@ -492,7 +561,10 @@ class StockWriter(_Writer):
 				**values,
 			}
 		)
+		doc.flags.iq_from_ledger = True
 		doc.insert()
+		if flt(d["quantity"]):
+			write_ledger(self.org, doc, flt(d["quantity"]), today(), "Stock Count (Import)", "IQ Import Batch", self.batch.name)
 		return 1, 0
 
 
@@ -516,5 +588,18 @@ class ShipmentWriter(_Writer):
 			doc.save()
 			return 0, 1
 		doc = frappe.get_doc({"doctype": "IQ Shipment", "organization": self.org, **values})
+		doc.insert()
+		return 1, 0
+
+
+class TemperatureWriter(_Writer):
+	def write(self, d):
+		doc = frappe.get_doc({
+			"doctype": "IQ Temperature Log", "organization": self.org,
+			"reading_time": d["reading_time"], "temperature": d["temperature"], "logger_id": d.get("logger_id"),
+			"location_type": "Warehouse" if d.get("warehouse_id") else "Shipment",
+			"warehouse": d.get("warehouse_id"), "shipment": d.get("shipment_id"),
+			"item": d.get("item_id"), "batch_no": d.get("batch_no"), "source_import": self.batch.name,
+		})
 		doc.insert()
 		return 1, 0

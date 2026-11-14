@@ -30,6 +30,10 @@ TENANT_DOCTYPES = (
 	"IQ Exception",
 	"IQ Cost Line",
 	"IQ Exchange Rate",
+	"IQ Stock Movement",
+	"IQ Stock Ledger Entry",
+	"IQ Delivery",
+	"IQ Temperature Log",
 )
 
 PLATFORM_ROLES = {"System Manager"}
@@ -108,6 +112,10 @@ import_batch_pqc = _make_pqc("IQ Import Batch")
 exception_pqc = _make_pqc("IQ Exception")
 cost_line_pqc = _make_pqc("IQ Cost Line")
 exchange_rate_pqc = _make_pqc("IQ Exchange Rate")
+stock_movement_pqc = _make_pqc("IQ Stock Movement")
+stock_ledger_pqc = _make_pqc("IQ Stock Ledger Entry")
+delivery_pqc = _make_pqc("IQ Delivery")
+temperature_log_pqc = _make_pqc("IQ Temperature Log")
 
 
 def has_permission(doc, ptype=None, user=None, debug=False) -> bool:

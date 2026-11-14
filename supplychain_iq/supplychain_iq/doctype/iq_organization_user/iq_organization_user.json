@@ -21,7 +21,7 @@
    "fieldname": "iq_role",
    "fieldtype": "Select",
    "label": "IQ Role",
-   "options": "Org Admin\nLogistics Officer\nWarehouse Officer\nViewer",
+   "options": "Org Admin\nLogistics Officer\nWarehouse Officer\nQA Officer\nViewer",
    "reqd": 1,
    "default": "Viewer",
    "in_list_view": 1
@@ -30,7 +30,7 @@
  "index_web_pages_for_search": 0,
  "istable": 1,
  "links": [],
- "modified": "2026-11-14 12:00:00.000000",
+ "modified": "2026-11-14 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "SupplyChain IQ",
  "name": "IQ Organization User",

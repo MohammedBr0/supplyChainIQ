@@ -13,7 +13,8 @@ const route = (dt, name) => `/desk/${frappe.router.slug(dt)}/${encodeURIComponen
 const listUrl = (dt, query) => `/desk/${frappe.router.slug(dt)}` + (query ? `?${query}` : "");
 const STATUS_COLORS = {
 	OK: "#2f855a", Delivered: "#2f855a", Low: "#d69e2e", Medium: "#d69e2e", "Expiring Soon": "#dd6b20", High: "#dd6b20",
-	Expired: "#c53030", "Out of Stock": "#9b2c2c", Critical: "#c53030", "Customs Clearance": "#805ad5",
+	Expired: "#c53030", "Out of Stock": "#9b2c2c", Critical: "#c53030", "Customs Clearance": "#805ad5", "QA Hold": "#6b46c1",
+	Receipt: "#2f855a", Issue: "#2b6cb0", Transfer: "#319795", "Adjustment In": "#b7791f", "Adjustment Out": "#c53030",
 };
 const COLORS = ["#2b6cb0", "#2f855a", "#b7791f", "#c53030", "#6b46c1", "#319795", "#718096", "#d53f8c", "#dd6b20"];
 
@@ -47,6 +48,11 @@ class IQDashboard {
 		page.add_inner_button(__("Purchase Order"), () => frappe.new_doc("IQ Purchase Order"), add);
 		page.add_inner_button(__("Stock Balance"), () => frappe.new_doc("IQ Stock Balance"), add);
 		page.add_inner_button(__("Cost Line"), () => frappe.new_doc("IQ Cost Line"), add);
+		page.add_inner_button(__("Stock Receipt"), () => frappe.new_doc("IQ Stock Movement", { movement_type: "Receipt" }), add);
+		page.add_inner_button(__("Stock Issue / Transfer"), () => frappe.new_doc("IQ Stock Movement", { movement_type: "Issue" }), add);
+		page.add_inner_button(__("Delivery"), () => frappe.new_doc("IQ Delivery"), add);
+		page.add_inner_button(__("Temperature Reading"), () => frappe.new_doc("IQ Temperature Log"), add);
+		page.add_inner_button(__("Import Temperature File"), () => new_import("Temperature Readings"), add);
 		page.add_inner_button(__("Exchange Rate"), () => frappe.new_doc("IQ Exchange Rate"), add);
 		page.add_inner_button(__("Import Stock File"), () => new_import("Existing Stock"), add);
 		page.add_inner_button(__("Import Shipments File"), () => new_import("Inbound Shipments"), add);
@@ -58,6 +64,9 @@ class IQDashboard {
 		page.add_inner_button(__("Import History"), () => frappe.set_route("List", "IQ Import Batch"), go);
 		page.add_inner_button(__("Landed Cost Report"), () => frappe.set_route("query-report", "IQ Landed Cost"), go);
 		page.add_inner_button(__("Supplier Performance"), () => frappe.set_route("query-report", "IQ Supplier Performance"), go);
+		page.add_inner_button(__("Stock Summary"), () => frappe.set_route("query-report", "IQ Stock Summary"), go);
+		page.add_inner_button(__("Stock on QA Hold"), () => frappe.set_route("List", "IQ Stock Balance", { qa_status: "Quarantined" }), go);
+		page.add_inner_button(__("Open Deliveries"), () => frappe.set_route("List", "IQ Delivery", { status: ["in", ["Draft", "Dispatched"]] }), go);
 
 		page.add_menu_item(__("Download: existing stock template"), () => window.open("/assets/supplychain_iq/templates/existing_stock_template.csv"));
 		page.add_menu_item(__("Download: inbound shipments template"), () => window.open("/assets/supplychain_iq/templates/inbound_shipments_template.csv"));
@@ -230,6 +239,51 @@ class IQDashboard {
 				[__("PO lead time"), (r) => (r.avg_po_lead_time_days ? esc(r.avg_po_lead_time_days) + "d" : "-")],
 			], d.suppliers, __("No delivered shipments measured yet")) + "</div>";
 		} else h += this.locked("Supplier Intelligence");
+		h += "</div>";
+
+		const o = d.operations;
+		h += this.section(__("Warehouse, distribution & cold chain"), __("movements, deliveries and QA holds"));
+		h += '<div class="iq-grid2">';
+		if (o) {
+			let tiles = "";
+			if (o.deliveries) {
+				const dl = o.deliveries;
+				tiles += this.tile(dl.to_dispatch, __("Deliveries to dispatch"), dl.to_dispatch ? "warn" : "", "/desk/iq-delivery?status=Draft");
+				tiles += this.tile(dl.in_transit, __("Deliveries on the road"), "", "/desk/iq-delivery?status=Dispatched");
+				tiles += this.tile(dl.overdue, __("Deliveries overdue"), dl.overdue ? "bad" : "ok");
+				tiles += this.tile(dl.on_time_rate == null ? "-" : dl.on_time_rate + "%", __("On-time delivery"), "");
+			}
+			if (o.qa_hold) tiles += this.tile(o.qa_hold.length, __("Stock lines on QA hold"), o.qa_hold.length ? "bad" : "ok", "/desk/iq-stock-balance?qa_status=Quarantined");
+			if (o.excursions_7d != null) tiles += this.tile(o.excursions_7d, __("Temperature excursions (7 days)"), o.excursions_7d ? "bad" : "ok", "/desk/iq-temperature-log?is_excursion=1");
+			if (o.draft_movements != null) tiles += this.tile(o.draft_movements, __("Draft stock movements"), o.draft_movements ? "warn" : "", "/desk/iq-stock-movement?docstatus=0");
+			h += `<div class="iq-card"><h5>${__("Operations")}</h5><div class="iq-tiles">${tiles}</div>`;
+			if (o.movements_30d) h += `<h5 style="margin-top:12px">${__("Stock movements, last 30 days")}</h5>${this.bar(o.movements_30d)}`;
+			h += "</div>";
+			if (o.qa_hold && o.qa_hold.length) {
+				h += '<div class="iq-card"><h5>' + __("QA hold: awaiting decision") + "</h5>" + this.table([
+					[__("Item"), (r) => link("IQ Stock Balance", r.name, r.item_name || r.item)],
+					[__("Batch"), (r) => esc(r.batch_no || "-")],
+					[__("Qty"), (r) => esc(r.quantity) + " " + esc(r.uom || "")],
+					[__("Reason"), (r) => esc((r.qa_hold_reason || "").slice(0, 90))],
+				], o.qa_hold) + "</div>";
+			}
+			if (o.deliveries) {
+				h += '<div class="iq-card"><h5>' + __("Open deliveries") + "</h5>" + this.table([
+					[__("Delivery"), (r) => link("IQ Delivery", r.name, r.recipient)],
+					[__("Destination"), (r) => esc(r.destination)],
+					[__("Planned"), (r) => fmtDate(r.planned_delivery_date)],
+					[__("Status"), (r) => pill(r.status)],
+				], o.deliveries.open_list, __("No open deliveries")) + "</div>";
+			}
+			if (o.recent_movements) {
+				h += '<div class="iq-card"><h5>' + __("Recent stock movements") + "</h5>" + this.table([
+					[__("Movement"), (r) => link("IQ Stock Movement", r.name)],
+					[__("Type"), (r) => esc(r.movement_type)],
+					[__("Date"), (r) => fmtDate(r.posting_date)],
+					[__("Qty"), (r) => esc(r.total_quantity)],
+				], o.recent_movements, __("No movements in the last 30 days")) + "</div>";
+			}
+		} else h += this.locked("Warehouse & Batch Control / Distribution / Cold Chain");
 		h += "</div>";
 
 		h += this.section(__("Performance"), "");

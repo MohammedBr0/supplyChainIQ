@@ -32,8 +32,11 @@ def stock_status(
 	expiry_days: int | None,
 	low_cover_threshold: float,
 	expiry_warning_days: int,
+	qa_status: str | None = None,
 ) -> str:
 	"""Single headline status; most severe condition wins."""
+	if qa_status in ("Quarantined", "Rejected"):
+		return "QA Hold"
 	if expiry_days is not None and expiry_days < 0:
 		return "Expired"
 	if not quantity or quantity <= 0:
@@ -190,3 +193,35 @@ def supplier_performance(shipments: list[dict], po_dates: dict | None = None) ->
 		"avg_transit_days": avg(transits),
 		"avg_po_lead_time_days": avg(leads),
 	}
+
+
+# ---------------------------------------------------------------- warehouse
+
+
+class InsufficientStock(ValueError):
+	pass
+
+
+def fefo_allocate(batches: list[dict], quantity: float) -> list[dict]:
+	"""First-expiry-first-out allocation.
+
+	batches: dicts with batch_no, quantity, expiry_date (date or None), already
+	filtered to issuable stock (not expired, not on QA hold). Batches without an
+	expiry date are used last. Returns [{batch_no, expiry_date, quantity}].
+	"""
+	if quantity <= 0:
+		raise ValueError("Quantity must be positive")
+	ordered = sorted(
+		(b for b in batches if (b.get("quantity") or 0) > 0),
+		key=lambda b: (b.get("expiry_date") is None, b.get("expiry_date") or date.max, str(b.get("batch_no") or "")),
+	)
+	remaining = quantity
+	out = []
+	for b in ordered:
+		take = min(remaining, b["quantity"])
+		out.append({"batch_no": b.get("batch_no"), "expiry_date": b.get("expiry_date"), "quantity": take})
+		remaining = round(remaining - take, 9)
+		if remaining <= 0:
+			return out
+	available = round(quantity - remaining, 9)
+	raise InsufficientStock(f"only {available} available, {quantity} requested")

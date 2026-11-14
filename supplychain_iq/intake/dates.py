@@ -99,3 +99,45 @@ def parse_date(value, calendar: str = "Gregorian") -> date | None:
 	except ValueError:
 		raise DateParseError(f"Could not read date '{value}'. Use YYYY-MM-DD or DD/MM/YYYY")
 	return parse_date(serial, calendar)
+
+
+_DT_FORMATS = (
+	"%Y-%m-%d %H:%M:%S",
+	"%Y-%m-%d %H:%M",
+	"%Y-%m-%dT%H:%M:%S",
+	"%Y-%m-%dT%H:%M",
+	"%d/%m/%Y %H:%M:%S",
+	"%d/%m/%Y %H:%M",
+	"%d-%m-%Y %H:%M:%S",
+	"%d-%m-%Y %H:%M",
+	"%d.%m.%Y %H:%M",
+)
+
+
+def parse_datetime(value) -> datetime | None:
+	"""Parse a logger timestamp (Gregorian). Date-only values become midnight."""
+	if value is None:
+		return None
+	if isinstance(value, datetime):
+		return value.replace(tzinfo=None)
+	if isinstance(value, date):
+		return datetime(value.year, value.month, value.day)
+	if isinstance(value, int | float) and not isinstance(value, bool):
+		if 1 <= value < 2958466:
+			return datetime(1899, 12, 30) + timedelta(days=float(value))
+		raise DateParseError(f"Unrecognised date-time number {value}")
+	text = str(value).strip()
+	if not text:
+		return None
+	text = text.rstrip("Z")
+	for fmt in _DT_FORMATS:
+		try:
+			return datetime.strptime(text, fmt)
+		except ValueError:
+			continue
+	try:
+		return datetime.fromisoformat(text).replace(tzinfo=None)
+	except ValueError:
+		pass
+	d = parse_date(text)
+	return datetime(d.year, d.month, d.day) if d else None

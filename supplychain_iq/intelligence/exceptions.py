@@ -45,6 +45,12 @@ def run_for_organization(org: str) -> dict:
 		findings.update(cost_findings(org, settings, t))
 	if has_module(org, "Inventory Intelligence"):
 		findings.update(stock_findings(org, settings, t))
+	if has_module(org, "Warehouse & Batch Control"):
+		findings.update(receipt_findings(org, t))
+	if has_module(org, "Distribution & Delivery"):
+		findings.update(delivery_findings(org, t))
+	if has_module(org, "Cold Chain Intelligence"):
+		findings.update(cold_chain_findings(org, t))
 	return sync_exceptions(org, findings)
 
 
@@ -148,6 +154,77 @@ def cost_findings(org, s, t):
 	return out
 
 
+def receipt_findings(org, t):
+	out = {}
+	for sh in frappe.get_all(
+		"IQ Shipment",
+		filters={"organization": org, "status": ["in", ["Delivered", "Closed"]], "received_quantity": [">", 0], "quantity": [">", 0]},
+		fields=["name", "shipment_title", "quantity", "received_quantity", "uom", "last_receipt"],
+	):
+		diff = round((sh.received_quantity or 0) - (sh.quantity or 0), 6)
+		if diff:
+			out[f"receipt:{sh.name}"] = _finding(
+				"Receipt Discrepancy", "High" if abs(diff) / sh.quantity > 0.05 else "Medium",
+				f"{sh.shipment_title}: received {sh.received_quantity:g} vs shipped {sh.quantity:g} {sh.uom or ''}",
+				"IQ Shipment", sh.name,
+				f"{'Short' if diff < 0 else 'Over'} by {abs(diff):g} {sh.uom or ''} (last receipt {sh.last_receipt}). "
+				"Check packing list, damage records and carrier claims. Receipt quantities are summed across receipts in item units; confirm the units match the shipment UOM.",
+				add_days(t, 5),
+			)
+	return out
+
+
+def delivery_findings(org, t):
+	out = {}
+	for d in frappe.get_all(
+		"IQ Delivery",
+		filters={"organization": org, "status": ["in", ["Draft", "Dispatched", "Partially Delivered"]]},
+		fields=["name", "recipient", "destination", "status", "planned_delivery_date", "dispatched_on"],
+	):
+		if d.status == "Partially Delivered":
+			out[f"dlvshort:{d.name}"] = _finding(
+				"Delivery Shortfall", "High", f"Short delivery to {d.recipient}", "IQ Delivery", d.name,
+				f"Delivery to {d.recipient} ({d.destination}) was confirmed with less than the dispatched quantity. "
+				"Record returned goods (Adjustment In) or a loss, then dismiss this exception with notes.",
+				add_days(t, 3),
+			)
+			continue
+		late = (t - getdate(d.planned_delivery_date)).days
+		if late > 0:
+			out[f"dlvlate:{d.name}"] = _finding(
+				"Delivery Overdue", "High" if late > 3 else "Medium",
+				f"Delivery to {d.recipient} {late} days overdue", "IQ Delivery", d.name,
+				f"Planned {d.planned_delivery_date}; status '{d.status}'"
+				+ (f", dispatched {d.dispatched_on}" if d.dispatched_on else ", not yet dispatched") + ".",
+				t,
+			)
+	return out
+
+
+def cold_chain_findings(org, t):
+	out = {}
+	since = add_days(t, -14)
+	for r in frappe.get_all(
+		"IQ Temperature Log",
+		filters={"organization": org, "is_excursion": 1, "location_type": "Shipment", "reading_time": [">=", since]},
+		fields=["name", "shipment", "temperature", "min_allowed", "max_allowed", "reading_time", "logger_id"],
+		order_by="reading_time desc",
+	):
+		key = f"tempship:{r.shipment}"
+		if key in out:
+			continue
+		received = frappe.db.get_value("IQ Shipment", r.shipment, "status") in ("Delivered", "Closed")
+		if received:
+			continue  # receipt already placed the cold-chain stock on QA hold
+		out[key] = _finding(
+			"Temperature Excursion", "Critical", f"Temperature excursion in transit: {r.temperature}°C", "IQ Shipment", r.shipment,
+			f"Reading {r.name} at {r.reading_time} (logger {r.logger_id or '-'}) outside {r.min_allowed}..{r.max_allowed}°C. "
+			"Cold-chain items will be placed on QA hold when this shipment is received.",
+			t,
+		)
+	return out
+
+
 def stock_findings(org, s, t):
 	out = {}
 	balances = frappe.get_all(
@@ -155,8 +232,24 @@ def stock_findings(org, s, t):
 		filters={"organization": org},
 		fields=["name", "item", "item_name", "warehouse", "batch_no", "quantity", "avg_monthly_consumption", "expiry_date"],
 	)
+	# stock-out is judged per item and warehouse: an emptied batch is normal under FEFO
+	on_hand = {}
+	for b in balances:
+		key = (b.item, b.warehouse)
+		on_hand[key] = on_hand.get(key, 0) + (b.quantity or 0)
 	low_threshold = s.low_stock_cover_months or 1
 	warn_days = s.expiry_warning_days or 90
+	for h in frappe.get_all(
+		"IQ Stock Balance",
+		filters={"organization": org, "qa_status": "Quarantined", "quantity": [">", 0]},
+		fields=["name", "item", "item_name", "warehouse", "batch_no", "quantity", "qa_hold_reason"],
+	):
+		out[f"qahold:{h.name}"] = _finding(
+			"QA Hold", "High", f"{h.item_name or h.item} @ {h.warehouse}" + (f" (batch {h.batch_no})" if h.batch_no else "") + ": awaiting QA decision",
+			"IQ Stock Balance", h.name,
+			f"{h.quantity} units quarantined. {h.qa_hold_reason or ''} Stock cannot be issued until a QA Officer records a decision.",
+			add_days(t, 2),
+		)
 	for b in balances:
 		label = f"{b.item_name or b.item} @ {b.warehouse}" + (f" (batch {b.batch_no})" if b.batch_no else "")
 		cover = calc.stock_cover_months(b.quantity, b.avg_monthly_consumption)
@@ -170,10 +263,11 @@ def stock_findings(org, s, t):
 				)
 			continue
 		if (b.quantity or 0) <= 0:
-			if b.avg_monthly_consumption:
-				out[f"stockout:{b.name}"] = _finding(
-					"Stock Out", "High", f"{label}: out of stock", "IQ Stock Balance", b.name,
-					f"Quantity 0 with average monthly consumption {b.avg_monthly_consumption}.", t,
+			key = (b.item, b.warehouse)
+			if b.avg_monthly_consumption and on_hand[key] <= 0 and f"stockout:{key[0]}:{key[1]}" not in out:
+				out[f"stockout:{key[0]}:{key[1]}"] = _finding(
+					"Stock Out", "High", f"{b.item_name or b.item} @ {b.warehouse}: out of stock", "IQ Stock Balance", b.name,
+					f"No stock of this item left in the warehouse (all batches at 0); average monthly consumption {b.avg_monthly_consumption}.", t,
 				)
 			continue
 		if exp_days is not None and exp_days <= warn_days:
@@ -200,8 +294,18 @@ def sync_exceptions(org, findings: dict) -> dict:
 		fields=["name", "fingerprint", "severity", "title", "description"],
 	)
 	by_fp = {e.fingerprint: e for e in existing}
+	# a user dismissal means "acknowledged": do not raise the same condition again
+	dismissed = set(
+		frappe.get_all(
+			"IQ Exception",
+			filters={"organization": org, "auto_generated": 1, "status": "Dismissed", "fingerprint": ["in", list(findings) or [""]]},
+			pluck="fingerprint",
+		)
+	)
 	created = updated = resolved = 0
 	for fp, f in findings.items():
+		if fp in dismissed and fp not in by_fp:
+			continue
 		if fp in by_fp:
 			e = by_fp[fp]
 			if (e.severity, e.title, e.description) != (f["severity"], f["title"], f["description"]):

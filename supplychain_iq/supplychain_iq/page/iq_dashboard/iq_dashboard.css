@@ -25,3 +25,5 @@
 .iq-dash .legend { font-size: 11px; color: var(--text-muted); display:flex; flex-wrap:wrap; gap:10px; }
 .iq-dash .empty { color: var(--text-muted); font-size: var(--text-sm); padding: 6px 0; }
 .iq-dash .locked { color: var(--text-muted); font-size: var(--text-sm); border:1px dashed var(--border-color); padding:10px; border-radius: var(--border-radius-md); }
+.iq-dash .pill.QA-Hold, .iq-dash .pill.Partially-Delivered { background:#e9d8fd; color:#553c9a; }
+.iq-dash .pill.Dispatched { background:#bee3f8; color:#2a4365; }

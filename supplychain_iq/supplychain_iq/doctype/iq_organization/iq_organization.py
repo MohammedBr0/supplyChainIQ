@@ -14,6 +14,7 @@ IQ_ROLE_MAP = {
 	"Org Admin": "IQ Org Admin",
 	"Logistics Officer": "IQ Logistics Officer",
 	"Warehouse Officer": "IQ Warehouse Officer",
+	"QA Officer": "IQ QA Officer",
 	"Viewer": "IQ Viewer",
 }
 ALL_IQ_ROLES = set(IQ_ROLE_MAP.values())
