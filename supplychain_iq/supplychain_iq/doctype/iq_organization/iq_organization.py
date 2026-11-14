@@ -17,6 +17,7 @@ IQ_ROLE_MAP = {
 	"QA Officer": "IQ QA Officer",
 	"Compliance Officer": "IQ Compliance Officer",
 	"HR Officer": "IQ HR Officer",
+	"Protocol Officer": "IQ Protocol Officer",
 	"Viewer": "IQ Viewer",
 }
 ALL_IQ_ROLES = set(IQ_ROLE_MAP.values())
@@ -37,7 +38,7 @@ class IQOrganization(Document):
 
 			if self.organization_type not in DIPLOMATIC_ID_ORG_TYPES:
 				frappe.throw(
-					_("Diplomatic ID Renewal can only be enabled for NGO / INGO / UN-related and international organizations.")
+					_("The Diplomatic Affairs app can only be enabled for NGO / INGO / UN-related and international organizations.")
 				)
 		if self.base_currency:
 			self.base_currency = self.base_currency.strip().upper()

@@ -37,6 +37,8 @@ TENANT_DOCTYPES = (
 	"IQ Privilege",
 	"IQ LC Case",
 	"IQ Diplomatic ID",
+	"IQ Diplomatic Persona",
+	"IQ Personal Privilege",
 	"IQ Transitor",
 	"IQ Portal User",
 )
@@ -114,7 +116,19 @@ warehouse_pqc = _make_pqc("IQ Warehouse")
 item_pqc = _make_pqc("IQ Item")
 stock_balance_pqc = _make_pqc("IQ Stock Balance")
 import_batch_pqc = _make_pqc("IQ Import Batch")
-exception_pqc = _make_pqc("IQ Exception")
+RESTRICTED_ROLES = {"IQ Protocol Officer", "IQ HR Officer", "IQ Org Admin"}
+
+
+def can_see_restricted(user: str | None = None) -> bool:
+	user = user or frappe.session.user
+	return is_platform_admin(user) or bool(RESTRICTED_ROLES.intersection(frappe.get_roles(user)))
+
+
+def exception_pqc(user=None, doctype="IQ Exception"):
+	cond = get_permission_query_conditions(user, "IQ Exception")
+	if cond and not can_see_restricted(user):
+		cond += " and coalesce(`tabIQ Exception`.`restricted`, 0) = 0"
+	return cond
 cost_line_pqc = _make_pqc("IQ Cost Line")
 exchange_rate_pqc = _make_pqc("IQ Exchange Rate")
 stock_movement_pqc = _make_pqc("IQ Stock Movement")
@@ -124,6 +138,8 @@ temperature_log_pqc = _make_pqc("IQ Temperature Log")
 privilege_pqc = _make_pqc("IQ Privilege")
 lc_case_pqc = _make_pqc("IQ LC Case")
 diplomatic_id_pqc = _make_pqc("IQ Diplomatic ID")
+diplomatic_persona_pqc = _make_pqc("IQ Diplomatic Persona")
+personal_privilege_pqc = _make_pqc("IQ Personal Privilege")
 transitor_pqc = _make_pqc("IQ Transitor")
 portal_user_pqc = _make_pqc("IQ Portal User")
 
@@ -144,6 +160,8 @@ def has_permission(doc, ptype=None, user=None, debug=False) -> bool:
 		# a new, unsaved record: validate() stamps the organization
 		return ptype == "create" or doc.is_new()
 	if doc_org != org:
+		return False
+	if doc.doctype == "IQ Exception" and doc.get("restricted") and not can_see_restricted(user):
 		return False
 	from supplychain_iq.entitlements import doctype_entitled
 
@@ -203,3 +221,14 @@ def validate_links_same_organization(doc):
 				_("{0} {1} belongs to a different organization.").format(_(df.label), frappe.bold(value)),
 				frappe.PermissionError,
 			)
+
+
+def is_portal_user(user: str | None = None) -> bool:
+	user = user or frappe.session.user
+	return bool(frappe.db.exists("IQ Portal User", {"user": user, "is_active": 1}))
+
+
+def has_desk_app_permission() -> bool:
+	"""SupplyChain IQ on the apps screen: staff only. Hiding it from partner
+	logins also makes Frappe land them on their role home page (the portal)."""
+	return frappe.session.user != "Guest" and not is_portal_user()

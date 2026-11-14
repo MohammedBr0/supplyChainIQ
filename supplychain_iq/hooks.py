@@ -289,14 +289,23 @@ add_to_apps_screen = [
 		"logo": "/assets/supplychain_iq/images/iq-logo.svg",
 		"title": "SupplyChain IQ",
 		"route": "/desk/iq-dashboard",
-	}
+		"has_permission": "supplychain_iq.tenancy.has_desk_app_permission",
+	},
+	{
+		# separate app for NGO / INGO / UN-related and international organizations
+		"name": "supplychain_iq_diplomatic",
+		"logo": "/assets/supplychain_iq/images/iq-diplomatic-logo.svg",
+		"title": "Diplomatic Affairs",
+		"route": "/desk/iq-diplomatic",
+		"has_permission": "supplychain_iq.diplomatic_affairs.access.has_app_permission",
+	},
 ]
 
 app_home = "/desk/iq-dashboard"
 
 # The unified dashboard is the main route: site root, login and the apps screen land on it.
 website_redirects = [
-	{"source": r"/", "target": "/desk/iq-dashboard", "redirect_http_status": 302},
+	{"source": r"/", "target": "/iq-home", "redirect_http_status": 302},
 ]
 
 after_install = "supplychain_iq.setup.install.after_install"
@@ -320,6 +329,8 @@ _TENANT = {
 	"IQ Privilege": "privilege_pqc",
 	"IQ LC Case": "lc_case_pqc",
 	"IQ Diplomatic ID": "diplomatic_id_pqc",
+	"IQ Diplomatic Persona": "diplomatic_persona_pqc",
+	"IQ Personal Privilege": "personal_privilege_pqc",
 	"IQ Transitor": "transitor_pqc",
 	"IQ Portal User": "portal_user_pqc",
 }

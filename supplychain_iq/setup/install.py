@@ -4,8 +4,9 @@ import frappe
 
 IQ_ROLES = (
 	"IQ Org Admin", "IQ Logistics Officer", "IQ Warehouse Officer", "IQ QA Officer",
-	"IQ Compliance Officer", "IQ HR Officer", "IQ Viewer",
+	"IQ Compliance Officer", "IQ HR Officer", "IQ Protocol Officer", "IQ Viewer",
 )
+DIPLOMATIC_ROUTE = "desk/iq-diplomatic"
 # external partners: website (portal) users, never desk users
 PORTAL_ROLES = ("IQ Supplier Portal", "IQ Transitor Portal")
 PORTAL_ROUTE = "iq-portal"
@@ -18,15 +19,15 @@ DEFAULT_PACKAGES = {
 		"modules": ["Shipment Control Tower", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard"],
 	},
 	"IQ Professional": {
-		"description": "Essential plus procurement, multimodal corridors, landed cost, supplier performance, warehouse operations, distribution, cold chain, privileges, LC tracking, diplomatic ID renewal (opt-in) and partner portals.",
+		"description": "Essential plus procurement, multimodal corridors, landed cost, supplier performance, warehouse operations, distribution, cold chain, privileges, LC tracking, the Diplomatic Affairs app (opt-in) and partner portals.",
 		"max_users": 25, "max_shipments": 1000, "max_warehouses": 10, "max_import_rows": 10000,
-		"modules": ["Shipment Control Tower", "Multimodal Corridor", "Procurement Intelligence", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard", "Cost Intelligence", "Supplier Intelligence", "Warehouse & Batch Control", "Distribution & Delivery", "Cold Chain Intelligence", "Regulatory & Privileges", "LC & Import Finance", "Diplomatic ID Renewal", "Partner Portals"],
+		"modules": ["Shipment Control Tower", "Multimodal Corridor", "Procurement Intelligence", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard", "Cost Intelligence", "Supplier Intelligence", "Warehouse & Batch Control", "Distribution & Delivery", "Cold Chain Intelligence", "Regulatory & Privileges", "LC & Import Finance", "Diplomatic Affairs", "Partner Portals"],
 	},
 	"IQ Enterprise": {
 		"description": "All modules, no usage limits.",
 		"max_users": 0, "max_shipments": 0, "max_warehouses": 0, "max_import_rows": 0,
 		"deployment_options": "SaaS or On-Premise",
-		"modules": ["Shipment Control Tower", "Multimodal Corridor", "Procurement Intelligence", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard", "Cost Intelligence", "Supplier Intelligence", "Warehouse & Batch Control", "Distribution & Delivery", "Cold Chain Intelligence", "Regulatory & Privileges", "LC & Import Finance", "Diplomatic ID Renewal", "Partner Portals"],
+		"modules": ["Shipment Control Tower", "Multimodal Corridor", "Procurement Intelligence", "Inventory Intelligence", "Data Intake", "Exception Management", "Unified Dashboard", "Cost Intelligence", "Supplier Intelligence", "Warehouse & Batch Control", "Distribution & Delivery", "Cold Chain Intelligence", "Regulatory & Privileges", "LC & Import Finance", "Diplomatic Affairs", "Partner Portals"],
 	},
 }
 
@@ -57,8 +58,9 @@ def create_roles():
 def set_dashboard_as_home():
 	"""Make the unified dashboard the landing page after login."""
 	for role in (*IQ_ROLES, "System Manager"):
-		if frappe.db.exists("Role", role) and frappe.db.get_value("Role", role, "home_page") != DASHBOARD_ROUTE:
-			frappe.db.set_value("Role", role, "home_page", DASHBOARD_ROUTE)
+		route = DIPLOMATIC_ROUTE if role == "IQ Protocol Officer" else DASHBOARD_ROUTE
+		if frappe.db.exists("Role", role) and frappe.db.get_value("Role", role, "home_page") != route:
+			frappe.db.set_value("Role", role, "home_page", route)
 	if frappe.db.get_single_value("System Settings", "default_app") != "supplychain_iq":
 		frappe.db.set_single_value("System Settings", "default_app", "supplychain_iq")
 	frappe.cache.delete_key("home_page")

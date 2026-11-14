@@ -1,0 +1,307 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-11-14 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "organization",
+  "persona",
+  "full_name",
+  "privilege_type",
+  "authority",
+  "reference_no",
+  "col1",
+  "effective_date",
+  "expiry_date",
+  "no_expiry_stated",
+  "validity_status",
+  "days_remaining",
+  "quota_section",
+  "entitlement",
+  "quota_value",
+  "quota_unit",
+  "col2",
+  "used_value",
+  "remaining_value",
+  "quota_used_pct",
+  "utilisation_section",
+  "utilisations",
+  "source_section",
+  "source_document",
+  "conditions",
+  "review_status",
+  "review_notes",
+  "col3",
+  "submitted_by",
+  "reviewed_by",
+  "last_reviewed_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "organization",
+   "fieldtype": "Link",
+   "label": "Organization",
+   "options": "IQ Organization",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "description": "Set automatically from your organization membership."
+  },
+  {
+   "fieldname": "persona",
+   "fieldtype": "Link",
+   "label": "Diplomat Persona",
+   "options": "IQ Diplomatic Persona",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "Full Name",
+   "fetch_from": "persona.full_name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "privilege_type",
+   "fieldtype": "Select",
+   "label": "Privilege Type",
+   "options": "Personal Effects Duty-Free Import\nVehicle Duty-Free Import\nDiplomatic Vehicle Plate\nTax Exemption Card\nResidence Permit\nOther",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "authority",
+   "fieldtype": "Data",
+   "label": "Issuing Authority",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reference_no",
+   "fieldtype": "Data",
+   "label": "Authority Reference No",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "effective_date",
+   "fieldtype": "Date",
+   "label": "Effective Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "expiry_date",
+   "fieldtype": "Date",
+   "label": "Expiry Date",
+   "in_list_view": 1,
+   "description": "As stated by the authority. IQ never assumes a validity period."
+  },
+  {
+   "fieldname": "no_expiry_stated",
+   "fieldtype": "Check",
+   "label": "No Expiry Stated"
+  },
+  {
+   "fieldname": "validity_status",
+   "fieldtype": "Select",
+   "label": "Validity Status",
+   "options": "Not Yet Effective\nValid\nExpiring Soon\nExpired\nNo Expiry Stated",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "days_remaining",
+   "fieldtype": "Int",
+   "label": "Days Remaining",
+   "read_only": 1,
+   "depends_on": "expiry_date"
+  },
+  {
+   "fieldname": "quota_section",
+   "fieldtype": "Section Break",
+   "label": "Entitlement & Quota",
+   "description": "Record the quota exactly as granted (e.g. 1 vehicle, a value in USD, a weight). Leave blank if the authorisation has no quota."
+  },
+  {
+   "fieldname": "entitlement",
+   "fieldtype": "Small Text",
+   "label": "Entitlement",
+   "reqd": 1,
+   "description": "What the authority granted, in its own words."
+  },
+  {
+   "fieldname": "quota_value",
+   "fieldtype": "Float",
+   "label": "Quota Value"
+  },
+  {
+   "fieldname": "quota_unit",
+   "fieldtype": "Data",
+   "label": "Quota Unit",
+   "description": "e.g. vehicle, USD, kg, shipments"
+  },
+  {
+   "fieldname": "col2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "used_value",
+   "fieldtype": "Float",
+   "label": "Used Value",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remaining_value",
+   "fieldtype": "Float",
+   "label": "Remaining Value",
+   "read_only": 1
+  },
+  {
+   "fieldname": "quota_used_pct",
+   "fieldtype": "Percent",
+   "label": "Quota Used",
+   "read_only": 1
+  },
+  {
+   "fieldname": "utilisation_section",
+   "fieldtype": "Section Break",
+   "label": "Utilisation"
+  },
+  {
+   "fieldname": "utilisations",
+   "fieldtype": "Table",
+   "label": "Utilisations",
+   "options": "IQ Privilege Utilisation"
+  },
+  {
+   "fieldname": "source_section",
+   "fieldtype": "Section Break",
+   "label": "Source & Review",
+   "description": "IQ tracks your organization's record of this authorisation. It is not the issuing authority and does not give legal advice."
+  },
+  {
+   "fieldname": "source_document",
+   "fieldtype": "Attach",
+   "label": "Source Document",
+   "reqd": 1
+  },
+  {
+   "fieldname": "conditions",
+   "fieldtype": "Small Text",
+   "label": "Conditions (with page / paragraph references)"
+  },
+  {
+   "fieldname": "review_status",
+   "fieldtype": "Select",
+   "label": "Review Status",
+   "options": "Draft\nUnder Review\nConfirmed\nNeeds Legal Review\nRevoked",
+   "default": "Draft",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "review_notes",
+   "fieldtype": "Small Text",
+   "label": "Review Notes"
+  },
+  {
+   "fieldname": "col3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "submitted_by",
+   "fieldtype": "Link",
+   "label": "Submitted By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reviewed_by",
+   "fieldtype": "Link",
+   "label": "Reviewed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_reviewed_on",
+   "fieldtype": "Date",
+   "label": "Last Reviewed On",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-14 23:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Diplomatic Affairs",
+ "name": "IQ Personal Privilege",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Org Admin",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ HR Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Protocol Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "PPV-.#####",
+ "naming_rule": "Expression (old style)",
+ "title_field": "privilege_type",
+ "show_title_field_in_link": 1,
+ "search_fields": "persona,privilege_type,reference_no"
+}

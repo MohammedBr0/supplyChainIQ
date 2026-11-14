@@ -120,9 +120,12 @@ def get_dashboard_data(organization: str | None = None):
 		}
 
 	if "Exception Management" in ent.modules:
+		exc_filters = {**f, "status": ["in", ["Open", "In Progress"]]}
+		if not tenancy.can_see_restricted():
+			exc_filters["restricted"] = 0
 		exc = frappe.get_all(
 			"IQ Exception",
-			filters={**f, "status": ["in", ["Open", "In Progress"]]},
+			filters=exc_filters,
 			fields=["name", "title", "exception_type", "severity", "status", "reference_doctype",
 				"reference_name", "due_date", "assigned_to"],
 		)
@@ -151,6 +154,22 @@ def get_dashboard_data(organization: str | None = None):
 
 	if ent.modules & {"Warehouse & Batch Control", "Distribution & Delivery", "Cold Chain Intelligence"}:
 		data["operations"] = operations_section(org, t, ent.modules)
+
+	if ent.modules & {"Regulatory & Privileges", "LC & Import Finance"}:
+		comp = {}
+		if "Regulatory & Privileges" in ent.modules:
+			privs = frappe.get_all("IQ Privilege", filters={**f, "review_status": ["!=", "Revoked"]}, fields=["validity_status", "review_status"])
+			comp["privileges_by_validity"] = _count_by(privs, "validity_status")
+			comp["privileges_pending_review"] = sum(1 for p in privs if p.review_status in ("Draft", "Under Review", "Needs Legal Review"))
+		if "LC & Import Finance" in ent.modules:
+			comp["lc_cases"] = frappe.get_all(
+				"IQ LC Case",
+				filters={**f, "status": ["not in", ["Payment Made", "Closed", "Cancelled"]]},
+				fields=["name", "lc_number", "bank", "status", "currency", "amount", "next_deadline", "checklist_progress"],
+				order_by="next_deadline asc",
+				limit=8,
+			)
+		data["compliance"] = comp
 
 	if "Data Intake" in ent.modules:
 		data["imports"] = frappe.get_all(

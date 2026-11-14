@@ -1,0 +1,29 @@
+.iq-dash { padding-left: 4px; padding-right: 4px; --iq-ok:#2f855a; --iq-warn:#b7791f; --iq-bad:#c53030; --iq-info:#2b6cb0; padding-bottom: 40px; }
+.iq-dash .iq-toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:16px; color: var(--text-muted); }
+.iq-dash .iq-section { margin: 20px 0 8px; display:flex; align-items:baseline; gap:10px; }
+.iq-dash .iq-section h4 { margin:0; font-weight:600; }
+.iq-dash .iq-section span { color: var(--text-muted); font-size: var(--text-sm); }
+.iq-dash .iq-tiles { display:grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap:12px; }
+.iq-dash .iq-tile { background: var(--card-bg); border:1px solid var(--border-color); border-radius: var(--border-radius-md); padding:12px 14px; cursor:pointer; }
+.iq-dash .iq-tile:hover { border-color: var(--primary); }
+.iq-dash .iq-tile .v { font-size: 26px; font-weight: 700; line-height: 1.2; }
+.iq-dash .iq-tile .l { color: var(--text-muted); font-size: var(--text-sm); }
+.iq-dash .iq-tile.bad .v { color: var(--iq-bad); }
+.iq-dash .iq-tile.warn .v { color: var(--iq-warn); }
+.iq-dash .iq-tile.ok .v { color: var(--iq-ok); }
+.iq-dash .iq-grid2 { display:grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap:16px; }
+.iq-dash .iq-card { background: var(--card-bg); border:1px solid var(--border-color); border-radius: var(--border-radius-md); padding:12px 14px; overflow-x:auto; }
+.iq-dash .iq-card h5 { margin: 0 0 8px; font-weight:600; }
+.iq-dash table { width:100%; font-size: var(--text-sm); }
+.iq-dash th { color: var(--text-muted); font-weight:500; text-align:left; padding:4px 6px; border-bottom:1px solid var(--border-color); }
+.iq-dash td { padding:5px 6px; border-bottom:1px solid var(--border-color); vertical-align: top; }
+.iq-dash .pill { display:inline-block; padding:1px 8px; border-radius: 10px; font-size: 11px; background: var(--bg-light-gray); }
+.iq-dash .pill.Critical, .iq-dash .pill.Expired, .iq-dash .pill.Out-of-Stock { background:#fed7d7; color:#9b2c2c; }
+.iq-dash .pill.High, .iq-dash .pill.Expiring-Soon { background:#feebc8; color:#9c4221; }
+.iq-dash .pill.Medium, .iq-dash .pill.Low { background:#fefcbf; color:#744210; }
+.iq-dash .bar { display:flex; height:10px; border-radius:5px; overflow:hidden; background: var(--bg-light-gray); margin: 6px 0 4px; }
+.iq-dash .legend { font-size: 11px; color: var(--text-muted); display:flex; flex-wrap:wrap; gap:10px; }
+.iq-dash .empty { color: var(--text-muted); font-size: var(--text-sm); padding: 6px 0; }
+.iq-dash .locked { color: var(--text-muted); font-size: var(--text-sm); border:1px dashed var(--border-color); padding:10px; border-radius: var(--border-radius-md); }
+.iq-dash .pill.QA-Hold, .iq-dash .pill.Partially-Delivered { background:#e9d8fd; color:#553c9a; }
+.iq-dash .pill.Dispatched { background:#bee3f8; color:#2a4365; }

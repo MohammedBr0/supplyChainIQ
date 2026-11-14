@@ -7,3 +7,4 @@
 supplychain_iq.patches.v0_2.add_stage4_modules_to_packages
 supplychain_iq.patches.v0_2.backfill_costs_and_supplier_performance
 supplychain_iq.patches.v0_3.add_stage6_modules_to_packages
+supplychain_iq.patches.v0_4.stage5_portals_diplomatic

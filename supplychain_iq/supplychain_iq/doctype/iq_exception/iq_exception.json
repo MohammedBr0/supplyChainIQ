@@ -20,7 +20,8 @@
   "description",
   "resolution_notes",
   "fingerprint",
-  "auto_generated"
+  "auto_generated",
+  "restricted"
  ],
  "fields": [
   {
@@ -44,7 +45,7 @@
    "fieldname": "exception_type",
    "fieldtype": "Select",
    "label": "Exception Type",
-   "options": "Shipment Delay\nOverdue Milestone\nMissing Document\nStock Out\nLow Stock\nExpiry Risk\nExpired Stock\nDemurrage Exposure\nCost Overrun\nReceipt Discrepancy\nDelivery Overdue\nDelivery Shortfall\nQA Hold\nTemperature Excursion\nPrivilege Expiry\nPrivilege Conflict\nLC Deadline\nDiplomatic ID Renewal\nRenewal Follow-up",
+   "options": "Shipment Delay\nOverdue Milestone\nMissing Document\nStock Out\nLow Stock\nExpiry Risk\nExpired Stock\nDemurrage Exposure\nCost Overrun\nReceipt Discrepancy\nDelivery Overdue\nDelivery Shortfall\nQA Hold\nTemperature Excursion\nPrivilege Expiry\nPrivilege Conflict\nLC Deadline\nDiplomatic ID Renewal\nRenewal Follow-up\nPersonal Privilege Expiry\nPrivilege Quota\nPassport Expiry\nDeparture Close-out",
    "reqd": 1,
    "in_list_view": 1,
    "in_standard_filter": 1
@@ -133,12 +134,19 @@
    "label": "Auto Generated",
    "default": "1",
    "read_only": 1
+  },
+  {
+   "fieldname": "restricted",
+   "fieldtype": "Check",
+   "label": "Restricted",
+   "read_only": 1,
+   "description": "Concerns personal (diplomatic / HR) data: visible only to Protocol Officers, HR Officers and Org Admins."
   }
  ],
  "index_web_pages_for_search": 0,
  "istable": 0,
  "links": [],
- "modified": "2026-11-14 21:00:00.000000",
+ "modified": "2026-11-14 23:00:00.000000",
  "modified_by": "Administrator",
  "module": "SupplyChain IQ",
  "name": "IQ Exception",
@@ -230,6 +238,18 @@
   },
   {
    "role": "IQ HR Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 0,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ Protocol Officer",
    "read": 1,
    "report": 1,
    "export": 1,

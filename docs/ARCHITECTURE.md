@@ -60,7 +60,29 @@ QA fields can only change through `set_qa_decision`, which requires the QA Offic
 ## ADR-10: Dismissed exceptions stay dismissed
 For persistent conditions, such as a short delivery, a user can mark the exception **Dismissed** with notes, and the engine will not raise it again. **Resolved** exceptions are re-raised if the condition still holds on the next run.
 
+## ADR-11: Diplomatic Affairs is a separate app area with personal-data controls
+It is a separate Frappe module (`diplomatic_affairs/`) with its own apps-screen entry, sidebar and dashboard, so it can later be split into its own Frappe app.
+
+Access requires three things:
+1. The package module.
+2. The organization's opt-in, allowed only for NGO/INGO/UN-related and international organizations.
+3. The Protocol Officer, HR Officer or Org Admin role.
+
+Exceptions about personal data carry `restricted=1` and are filtered out of lists, documents and the dashboard for other roles. IQ records the organization's workflow. It never claims to submit to the Ministry of Foreign Affairs or decide anyone's status.
+
+## ADR-12: Partner portals never use desk permissions
+Supplier and transitor logins are website users with portal roles only. A portal login cannot also be staff or hold internal roles.
+
+All portal access goes through `api/portal.py`, which resolves the caller's link (organization plus supplier or transitor) and checks ownership of every record. Fields, milestones, statuses, document types and cost categories are allow-listed per portal type. Uploads are size- and type-limited, and every action is written to the record's timeline.
+
+Agent charges arrive as estimates, never as actuals. Hiding the staff app from portal users also makes Frappe land them on the portal after login.
+
+## ADR-13: Authority-issued records share one review model
+`review.py` (ReviewMixin) gives organization and personal privileges the same rules:
+- validity comes from the document, or "no expiry stated" is ticked explicitly;
+- review is maker-checker;
+- substantive edits after review send the record back for re-review.
+
 ## Next stages
-5. Regulatory privileges, diplomatic ID and LC workflows (source-linked rules, reviewer approval).
 6. Multimodal corridor analytics, cold chain, distribution.
 7. Integration adapters, object storage for files, per-customer sites.

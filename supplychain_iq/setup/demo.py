@@ -24,6 +24,8 @@ ORGS = {
 			("relief.logistics@demo.example", "Relief", "Logistics", "Logistics Officer"),
 			("relief.warehouse@demo.example", "Relief", "Warehouse", "Warehouse Officer"),
 			("relief.qa@demo.example", "Relief", "QA", "QA Officer"),
+			("relief.compliance@demo.example", "Relief", "Compliance", "Compliance Officer"),
+			("relief.protocol@demo.example", "Relief", "Protocol", "Protocol Officer"),
 		],
 	},
 	"Demo Pharma Importer": {
@@ -69,6 +71,9 @@ def create_demo(password: str | None = None):
 	_relief_data("Demo Relief Org")
 	_relief_costs("Demo Relief Org")
 	_relief_operations("Demo Relief Org")
+	_relief_compliance_and_partners("Demo Relief Org", password)
+	_relief_diplomatic("Demo Relief Org")
+	frappe.set_user("Administrator")
 	_pharma_data("Demo Pharma Importer")
 	for org in ORGS:
 		run_for_organization(org)
@@ -278,6 +283,143 @@ def _relief_operations(org):
 			"doctype": "IQ Temperature Log", **o, "location_type": "Warehouse", "warehouse": cold, "logger_id": "DEMO-LOGGER-07",
 			"reading_time": add_to_date(now_datetime(), hours=hours), "temperature": temp,
 		}).insert()
+
+
+def _as(user, fn):
+	frappe.set_user(user)
+	try:
+		return fn()
+	finally:
+		frappe.set_user("Administrator")
+
+
+def _website_user(email, first, password):
+	if not frappe.db.exists("User", email):
+		frappe.get_doc({"doctype": "User", "email": email, "first_name": first, "send_welcome_email": 0,
+			"user_type": "Website User", "new_password": password}).insert(ignore_permissions=True)
+
+
+def _relief_compliance_and_partners(org, password):
+	"""Stage 5 + portals demo: privileges, LC case, transitor and portal logins (synthetic)."""
+	if frappe.db.exists("IQ LC Case", {"organization": org}):
+		return
+	o = {"organization": org}
+	pod = frappe.get_doc({"doctype": "File", "file_name": "demo-duty-free-approval.txt", "is_private": 1,
+		"content": b"Synthetic demo approval letter - not a real authority document"})
+	pod.flags.ignore_permissions = True
+	pod.insert()
+	priv = frappe.get_doc({
+		"doctype": "IQ Privilege", **o, "title": "Duty-free privilege - medical supplies (demo)", "privilege_type": "Duty-Free Privilege",
+		"authority": "Example Authority (demo)", "reference_no": "DEMO-DFP-2026-014", "beneficiary": org,
+		"effective_date": _d(-150), "expiry_date": _d(25), "scope": "Essential medicines and medical consumables for the health programme (demo).",
+		"source_document": pod.file_url, "confidence": "High",
+		"conditions": [
+			{"condition_type": "Authority-issued Condition", "condition_text": "Goods may not be sold or transferred.", "source_reference": "p.1 para 3"},
+			{"condition_type": "Authority-issued Condition", "condition_text": "Present this approval with the customs declaration.", "source_reference": "p.2 para 1"},
+		],
+	}).insert()
+	_as("relief.admin@demo.example", lambda: frappe.get_doc("IQ Privilege", priv.name).submit_for_review())
+	_as("relief.compliance@demo.example", lambda: frappe.get_doc("IQ Privilege", priv.name).confirm("Checked against the original letter (demo)."))
+	frappe.get_doc({
+		"doctype": "IQ Privilege", **o, "title": "Import permit - cold-chain vaccines (demo)", "privilege_type": "Import Permit",
+		"authority": "Example Regulator (demo)", "reference_no": "DEMO-IP-778", "effective_date": _d(-10), "no_expiry_stated": 1,
+		"scope": "Measles vaccine, 14 boxes (demo).", "source_document": pod.file_url, "confidence": "Medium",
+	}).insert()
+
+	trn = _get_or_create("IQ Transitor", {**o, "transitor_name": "Example Clearing & Forwarding PLC"},
+		{"license_number": "DEMO-CF-0091", "services": "Customs clearing, forwarding, inland transport"})
+	med = frappe.db.get_value("IQ Shipment", {**o, "awb_bl_number": "DEMO-BL-778812"})
+	kits = frappe.db.get_value("IQ Shipment", {**o, "awb_bl_number": "DEMO-CMR-5521"})
+	for name, extra in ((med, {"privilege": priv.name}), (kits, {})):
+		if name:
+			doc = frappe.get_doc("IQ Shipment", name)
+			doc.transitor = trn
+			doc.update(extra)
+			doc.save()
+
+	po2 = frappe.db.get_value("IQ Purchase Order", {**o, "po_number": "DEMO-PO-1002"})
+	lc = frappe.get_doc({
+		"doctype": "IQ LC Case", **o, "bank": "Example Commercial Bank (demo)", "lc_number": "DEMO-LC-5512",
+		"purchase_order": po2, "currency": "EUR", "amount": 46000, "proforma_reference": "PF-DEMO-221",
+		"latest_shipment_date": _d(6), "expiry_date": _d(40), "presentation_days": 21,
+		"milestones": [
+			{"event": "Application Prepared", "event_date": _d(-18)},
+			{"event": "Submitted to Bank", "event_date": _d(-15), "reference": "BANK-REF-DEMO-1"},
+			{"event": "LC Issued", "event_date": _d(-10), "reference": "DEMO-LC-5512"},
+		],
+	}).insert()
+	lc.load_standard_checklist()
+	lc.reload()
+	for c in lc.checklist[:4]:
+		c.completed = 1
+	lc.save()
+	vac = frappe.db.get_value("IQ Shipment", {**o, "awb_bl_number": "DEMO-AWB-17600001"})
+	if vac:
+		doc = frappe.get_doc("IQ Shipment", vac)
+		doc.lc_case = lc.name
+		doc.save()
+
+	sup = frappe.db.get_value("IQ Supplier", {**o, "supplier_name": "Example Global Health Supplies"})
+	for email, first, ptype, link in (("supplier.demo@demo.example", "Supplier Demo", "Supplier", sup),
+			("transitor.demo@demo.example", "Transitor Demo", "Transitor", trn)):
+		_website_user(email, first, password)
+		if not frappe.db.exists("IQ Portal User", {"user": email}):
+			frappe.get_doc({"doctype": "IQ Portal User", **o, "user": email, "portal_type": ptype,
+				"supplier": link if ptype == "Supplier" else None, "transitor": link if ptype == "Transitor" else None}).insert()
+	if sup:
+		_get_or_create("IQ Purchase Order", {**o, "po_number": "DEMO-PO-1003"},
+			{"supplier": sup, "status": "Draft", "order_date": _d(-2), "currency": "USD", "total_value": 18500})
+
+
+def _relief_diplomatic(org):
+	"""Diplomatic Affairs demo: synthetic personas only (no real people)."""
+	if frappe.db.exists("IQ Diplomatic Persona", {"organization": org}):
+		return
+	frappe.db.set_value("IQ Organization", org, "enable_diplomatic_id", 1)
+	from supplychain_iq import tenancy
+
+	tenancy.clear_cache()
+	o = {"organization": org}
+	alpha = frappe.get_doc({"doctype": "IQ Diplomatic Persona", **o, "full_name": "Demo Staff Alpha", "diplomatic_category": "Diplomatic Agent",
+		"position": "Country Director (demo)", "nationality": "Exampleland", "arrival_date": _d(-700), "assignment_end_date": _d(45),
+		"passport_type": "Diplomatic", "passport_number": "DEMO-P-0001", "passport_expiry": _d(150)}).insert()
+	beta = frappe.get_doc({"doctype": "IQ Diplomatic Persona", **o, "full_name": "Demo Staff Beta", "diplomatic_category": "International Staff (non-diplomatic)",
+		"position": "Logistics Coordinator (demo)", "nationality": "Sampleland", "arrival_date": _d(-300), "assignment_end_date": _d(400),
+		"passport_type": "Service / Official", "passport_number": "DEMO-P-0002", "passport_expiry": _d(900)}).insert()
+	frappe.get_doc({"doctype": "IQ Diplomatic Persona", **o, "full_name": "Demo Dependant Alpha-1", "diplomatic_category": "Dependant",
+		"principal": alpha.name, "relationship": "Spouse", "passport_type": "Diplomatic", "passport_expiry": _d(1200)}).insert()
+	frappe.get_doc({"doctype": "IQ Diplomatic ID", **o, "persona": alpha.name, "employee_name": alpha.full_name, "id_type": "Diplomatic ID",
+		"id_number": "DEMO-ID-1001", "issue_date": _d(-325), "expiry_date": _d(40)}).insert()
+	did = frappe.get_doc({"doctype": "IQ Diplomatic ID", **o, "persona": beta.name, "employee_name": beta.full_name, "id_type": "Service ID",
+		"id_number": "DEMO-ID-1002", "issue_date": _d(-300), "expiry_date": _d(55)}).insert()
+	did.load_standard_requirements()
+	did.reload()
+	for r in did.requirements:
+		r.received = 1
+	did.renewal_status = "Preparing Documents"
+	did.save()
+	did.reload()
+	for r in did.requirements:
+		r.received = 1
+	did.renewal_status = "Internal Review Complete"
+	did.save()
+	did.renewal_status, did.submission_reference, did.submission_date, did.next_follow_up = "Submitted", "DEMO-SUB-77", _d(-12), _d(-2)
+	did.save()
+
+	src = frappe.get_doc({"doctype": "File", "file_name": "demo-personal-privilege.txt", "is_private": 1,
+		"content": b"Synthetic demo authorisation - not a real document"})
+	src.flags.ignore_permissions = True
+	src.insert()
+	for persona, ptype, quota, unit, used, expiry in (
+		(alpha.name, "Vehicle Duty-Free Import", 1, "vehicle", [(_d(-600), "Vehicle import (demo)", 1)], _d(45)),
+		(beta.name, "Personal Effects Duty-Free Import", 15000, "USD", [(_d(-250), "Household effects shipment (demo)", 9000)], _d(30)),
+	):
+		pp = frappe.get_doc({"doctype": "IQ Personal Privilege", **o, "persona": persona, "privilege_type": ptype,
+			"authority": "Example Authority (demo)", "reference_no": f"DEMO-PP-{persona[-3:]}", "effective_date": _d(-700),
+			"expiry_date": expiry, "entitlement": f"{ptype} as granted in the demo authorisation.", "quota_value": quota, "quota_unit": unit,
+			"source_document": src.file_url, "utilisations": [{"use_date": d, "description": t, "value_used": v} for d, t, v in used]}).insert()
+		_as("relief.protocol@demo.example", lambda pp=pp: frappe.get_doc("IQ Personal Privilege", pp.name).submit_for_review())
+		_as("relief.admin@demo.example", lambda pp=pp: frappe.get_doc("IQ Personal Privilege", pp.name).confirm("Matches the original (demo)."))
 
 
 def _pharma_data(org):

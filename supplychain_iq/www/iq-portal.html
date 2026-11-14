@@ -1,0 +1,151 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ _("Partner Portal") }}{% endblock %}
+
+{% block page_content %}
+<style>
+	.iqp { max-width: 1100px; margin: 0 auto; padding: 8px 16px 48px; font-size: 14px; }
+	.iqp h2 { margin: 4px 0 2px; font-size: 22px; }
+	.iqp .muted { color: var(--text-muted, #6b7280); }
+	.iqp .tabs { display: flex; gap: 6px; margin: 18px 0 12px; flex-wrap: wrap; }
+	.iqp .tabs button { border: 1px solid #d1d5db; background: #fff; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+	.iqp .tabs button.on { background: #1f4e79; color: #fff; border-color: #1f4e79; }
+	.iqp .card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; margin-bottom: 12px; background: #fff; }
+	.iqp table { width: 100%; border-collapse: collapse; }
+	.iqp th, .iqp td { text-align: left; padding: 7px 6px; border-bottom: 1px solid #eef0f3; vertical-align: top; }
+	.iqp th { color: #6b7280; font-weight: 500; font-size: 12px; }
+	.iqp tr.click { cursor: pointer; } .iqp tr.click:hover { background: #f8fafc; }
+	.iqp .pill { display: inline-block; padding: 1px 9px; border-radius: 10px; background: #eef2f7; font-size: 12px; }
+	.iqp .pill.warn { background: #feebc8; color: #9c4221; } .iqp .pill.ok { background: #c6f6d5; color: #22543d; }
+	.iqp .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+	.iqp label { display: block; font-size: 12px; color: #6b7280; margin: 8px 0 2px; }
+	.iqp input, .iqp select { width: 100%; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; }
+	.iqp .btn { margin-top: 10px; padding: 7px 14px; border-radius: 6px; border: 0; background: #1f4e79; color: #fff; cursor: pointer; }
+	.iqp .btn.light { background: #eef2f7; color: #1f2937; }
+	.iqp .row { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; } .iqp .row > div { flex: 1; min-width: 140px; }
+	.iqp .notice { background: #f1f5f9; border-radius: 8px; padding: 10px 12px; margin-top: 8px; font-size: 13px; }
+	@media (max-width: 640px) { .iqp .hide-sm { display: none; } }
+</style>
+<div class="iqp">
+{% if error %}
+	<div class="card"><h2>{{ _("Partner Portal") }}</h2><p>{{ error }}</p><p class="muted">{{ _("Ask your contact at the organization to give your login portal access.") }}</p></div>
+{% else %}
+	<div class="muted">{{ iqp.organization }}</div>
+	<h2>{{ iqp.partner_name }}</h2>
+	<div class="muted">{{ _(iqp.portal_type) }} {{ _("portal") }} &middot; {{ frappe.session.user }}</div>
+	<div class="tabs" id="iqp-tabs"></div>
+	<div id="iqp-main"><div class="card muted">{{ _("Loading...") }}</div></div>
+{% endif %}
+</div>
+{% endblock %}
+
+{% block script %}
+{% if not error %}
+<script>
+(() => {
+	const API = "supplychain_iq.api.portal.";
+	const $ = (s) => document.querySelector(s);
+	const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+	const today = new Date().toISOString().slice(0, 10);
+	let data = null, tab = "shipments";
+
+	function call(method, args) {
+		return new Promise((resolve, reject) =>
+			frappe.call({ method: API + method, args: args || {}, type: "POST", callback: (r) => resolve(r.message), error: reject }));
+	}
+	const readFile = (file) => new Promise((resolve, reject) => {
+		const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file);
+	});
+
+	async function load() {
+		data = await call("get_portal_data");
+		const tabs = [["shipments", __("Shipments")]];
+		if (data.purchase_orders) tabs.unshift(["pos", __("Purchase Orders")]);
+		if (!tabs.find((t) => t[0] === tab)) tab = tabs[0][0];
+		$("#iqp-tabs").innerHTML = tabs.map(([k, l]) => `<button data-t="${k}" class="${k === tab ? "on" : ""}">${l}</button>`).join("");
+		$("#iqp-tabs").querySelectorAll("button").forEach((b) => (b.onclick = () => { tab = b.dataset.t; load(); }));
+		tab === "pos" ? renderPOs() : renderShipments();
+	}
+
+	function renderPOs() {
+		const rows = data.purchase_orders.map((p) => `<tr>
+			<td><b>${esc(p.po_number)}</b></td><td><span class="pill ${p.status === "Draft" ? "warn" : "ok"}">${esc(p.status)}</span></td>
+			<td class="hide-sm">${esc(p.order_date || "-")}</td><td>${esc(p.expected_ship_date || "-")}</td>
+			<td class="hide-sm">${esc(p.currency)} ${Number(p.total_value || 0).toLocaleString()}</td>
+			<td>${["Draft", "Confirmed"].includes(p.status) ? `<input type="date" id="esd-${esc(p.name)}" value="${esc(p.expected_ship_date || "")}" style="max-width:150px">
+				<button class="btn light" data-po="${esc(p.name)}">${p.status === "Draft" ? __("Confirm") : __("Update date")}</button>` : ""}</td></tr>`).join("");
+		$("#iqp-main").innerHTML = `<div class="card"><table><thead><tr><th>${__("PO")}</th><th>${__("Status")}</th><th class="hide-sm">${__("Ordered")}</th>
+			<th>${__("Expected ship date")}</th><th class="hide-sm">${__("Value")}</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="6" class="muted">${__("No purchase orders")}</td></tr>`}</tbody></table></div>`;
+		document.querySelectorAll("[data-po]").forEach((b) => (b.onclick = async () => {
+			await call("confirm_purchase_order", { name: b.dataset.po, expected_ship_date: $("#esd-" + b.dataset.po).value || null });
+			frappe.show_alert({ message: __("Saved"), indicator: "green" }); load();
+		}));
+	}
+
+	function renderShipments() {
+		const rows = data.shipments.map((s) => `<tr class="click" data-s="${esc(s.name)}">
+			<td><b>${esc(s.shipment_title)}</b><div class="muted">${esc(s.name)} ${s.awb_bl_number ? "&middot; " + esc(s.awb_bl_number) : ""}</div></td>
+			<td><span class="pill">${esc(s.status)}</span></td><td class="hide-sm">${esc(s.origin)} &rarr; ${esc(s.destination)}</td>
+			<td>${esc(s.planned_eta || "-")}</td><td>${s.missing_documents ? `<span class="pill warn">${s.missing_documents} ${__("missing")}</span>` : `<span class="pill ok">${__("complete")}</span>`}</td></tr>`).join("");
+		$("#iqp-main").innerHTML = `<div class="card"><table><thead><tr><th>${__("Shipment")}</th><th>${__("Status")}</th><th class="hide-sm">${__("Route")}</th>
+			<th>${__("Planned ETA")}</th><th>${__("Documents")}</th></tr></thead><tbody>${rows || `<tr><td colspan="5" class="muted">${__("No shipments assigned to you")}</td></tr>`}</tbody></table></div><div id="iqp-detail"></div>`;
+		document.querySelectorAll("[data-s]").forEach((r) => (r.onclick = () => showShipment(r.dataset.s)));
+	}
+
+	async function showShipment(name) {
+		const s = await call("get_shipment", { name });
+		const R = data.rules;
+		const field = (f, label, type) => `<div><label>${label}</label><input type="${type || "date"}" data-f="${f}" value="${esc(s[f] || "")}"></div>`;
+		const labels = { planned_etd: __("Planned departure"), actual_etd: __("Actual departure"), awb_bl_number: __("AWB / BL number"), free_time_start: __("Arrived at port (free time starts)"), actual_eta: __("Arrived at destination") };
+		const ms = R.milestones.map((m) => {
+			const cur = s.milestones.find((x) => x.milestone === m);
+			return `<tr><td>${esc(m)}</td><td>${esc(cur && cur.planned_date || "-")}</td><td>${cur && cur.actual_date ? `<span class="pill ok">${esc(cur.actual_date)}</span>` :
+				`<input type="date" max="${today}" data-m="${esc(m)}" style="max-width:150px"> <button class="btn light" data-ms="${esc(m)}">${__("Record")}</button>`}</td></tr>`;
+		}).join("");
+		const docs = s.documents.map((d) => `<tr><td>${esc(d.document_type)}</td><td>${d.required ? __("Required") : ""}</td>
+			<td>${d.received ? `<span class="pill ok">${__("Received")}</span>` : `<span class="pill warn">${__("Missing")}</span>`}</td></tr>`).join("");
+		let costs = "";
+		if (data.can_submit_costs) {
+			costs = `<div class="card"><h4>${__("Submit a charge")}</h4><div class="notice">${__("Charges are recorded as estimates for the organization to verify against your invoice.")}</div>
+				<div class="row"><div><label>${__("Category")}</label><select id="c-cat">${R.cost_categories.map((c) => `<option>${esc(c)}</option>`).join("")}</select></div>
+				<div><label>${__("Currency")}</label><input id="c-cur" value="ETB" maxlength="3"></div><div><label>${__("Amount")}</label><input id="c-amt" type="number" min="0" step="0.01"></div></div>
+				<div class="row"><div><label>${__("Invoice reference")}</label><input id="c-ref"></div><div><label>${__("Invoice date")}</label><input id="c-date" type="date" max="${today}" value="${today}"></div>
+				<div><label>${__("Invoice file")}</label><input id="c-file" type="file"></div></div><button class="btn" id="c-go">${__("Submit charge")}</button>
+				${(s.my_costs || []).length ? `<table style="margin-top:10px"><tr><th>${__("Category")}</th><th>${__("Amount")}</th><th>${__("Invoice")}</th></tr>${s.my_costs.map((c) => `<tr><td>${esc(c.cost_category)}</td><td>${esc(c.currency)} ${Number(c.amount).toLocaleString()}</td><td>${esc(c.invoice_reference || "")}</td></tr>`).join("")}</table>` : ""}</div>`;
+		}
+		$("#iqp-detail").innerHTML = `<div class="card"><h3 style="margin:0">${esc(s.shipment_title)}</h3><div class="muted">${esc(s.name)} &middot; ${esc(s.origin)} &rarr; ${esc(s.destination)} &middot; ${__("planned ETA")} ${esc(s.planned_eta || "-")}</div></div>
+			<div class="grid"><div class="card"><h4>${__("Milestones")}</h4><table><tr><th>${__("Milestone")}</th><th>${__("Planned")}</th><th>${__("Actual")}</th></tr>${ms}</table></div>
+			<div class="card"><h4>${__("Shipment details")}</h4>${R.fields.map((f) => field(f, labels[f] || f, f === "awb_bl_number" ? "text" : "date")).join("")}
+				<label>${__("Status")}</label><select data-f="status"><option value="">${esc(s.status)} (${__("unchanged")})</option>${R.statuses.filter((x) => x !== s.status).map((x) => `<option>${esc(x)}</option>`).join("")}</select>
+				<button class="btn" id="f-save">${__("Save details")}</button></div></div>
+			<div class="grid"><div class="card"><h4>${__("Documents")}</h4><table>${docs || `<tr><td class="muted">${__("No checklist yet")}</td></tr>`}</table>
+				<div class="row"><div><label>${__("Document type")}</label><select id="d-type">${R.documents.map((d) => `<option>${esc(d)}</option>`).join("")}</select></div>
+				<div><label>${__("File (PDF, image, Office; max 10 MB)")}</label><input type="file" id="d-file"></div></div><button class="btn" id="d-go">${__("Upload")}</button></div>${costs}</div>`;
+		const done = (msg) => { frappe.show_alert({ message: msg || __("Saved"), indicator: "green" }); load().then(() => showShipment(name)); };
+		document.querySelectorAll("[data-ms]").forEach((b) => (b.onclick = async () => {
+			const v = document.querySelector(`[data-m="${b.dataset.ms}"]`).value; if (!v) return frappe.msgprint(__("Choose the date."));
+			await call("set_milestone", { name, milestone: b.dataset.ms, actual_date: v }); done();
+		}));
+		$("#f-save").onclick = async () => {
+			const values = {};
+			document.querySelectorAll("[data-f]").forEach((i) => { const f = i.dataset.f; if (f === "status") { if (i.value) values.status = i.value; } else if ((i.value || null) !== (s[f] || null)) values[f] = i.value || null; });
+			if (!Object.keys(values).length) return frappe.msgprint(__("Nothing changed."));
+			await call("update_shipment", { name, values: JSON.stringify(values) }); done();
+		};
+		$("#d-go").onclick = async () => {
+			const f = $("#d-file").files[0]; if (!f) return frappe.msgprint(__("Choose a file."));
+			await call("upload_document", { name, document_type: $("#d-type").value, filename: f.name, content: await readFile(f) }); done(__("Uploaded"));
+		};
+		if ($("#c-go")) $("#c-go").onclick = async () => {
+			const f = $("#c-file").files[0]; if (!f) return frappe.msgprint(__("Attach the invoice."));
+			await call("submit_cost", { name, cost_category: $("#c-cat").value, currency: $("#c-cur").value, amount: $("#c-amt").value,
+				invoice_reference: $("#c-ref").value, cost_date: $("#c-date").value, filename: f.name, content: await readFile(f) }); done(__("Charge submitted"));
+		};
+		$("#iqp-detail").scrollIntoView({ behavior: "smooth" });
+	}
+
+	frappe.ready ? frappe.ready(load) : document.addEventListener("DOMContentLoaded", load);
+})();
+</script>
+{% endif %}
+{% endblock %}

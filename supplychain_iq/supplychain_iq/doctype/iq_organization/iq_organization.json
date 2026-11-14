@@ -154,8 +154,8 @@
   {
    "fieldname": "enable_diplomatic_id",
    "fieldtype": "Check",
-   "label": "Enable Diplomatic ID Renewal",
-   "description": "Only for NGO / INGO / UN-related and international organizations. Requires the Diplomatic ID Renewal module in your package. Access is limited to HR Officers and Org Admins."
+   "label": "Enable Diplomatic Affairs App",
+   "description": "Diplomat personas, personal privileges and diplomatic ID renewal. Only for NGO / INGO / UN-related and international organizations; requires the Diplomatic Affairs module in your package. Access is limited to Protocol Officers, HR Officers and Org Admins."
   },
   {
    "fieldname": "diplomatic_id_warning_days",
@@ -179,7 +179,7 @@
  "index_web_pages_for_search": 0,
  "istable": 0,
  "links": [],
- "modified": "2026-11-14 21:00:00.000000",
+ "modified": "2026-11-14 23:00:00.000000",
  "modified_by": "Administrator",
  "module": "SupplyChain IQ",
  "name": "IQ Organization",

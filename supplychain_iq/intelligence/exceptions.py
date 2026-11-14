@@ -34,7 +34,8 @@ def run_for_organization(org: str) -> dict:
 		"IQ Organization",
 		org,
 		["expiry_warning_days", "low_stock_cover_months", "delay_high_days", "delay_critical_days",
-			"demurrage_warning_days", "cost_overrun_pct"],
+			"demurrage_warning_days", "cost_overrun_pct", "privilege_warning_days", "lc_warning_days",
+			"diplomatic_id_warning_days"],
 		as_dict=True,
 	)
 	t = getdate(today())
@@ -51,11 +52,18 @@ def run_for_organization(org: str) -> dict:
 		findings.update(delivery_findings(org, t))
 	if has_module(org, "Cold Chain Intelligence"):
 		findings.update(cold_chain_findings(org, t))
+	if has_module(org, "Regulatory & Privileges"):
+		findings.update(privilege_findings(org, settings, t))
+	if has_module(org, "LC & Import Finance"):
+		findings.update(lc_findings(org, settings, t))
+	if has_module(org, "Diplomatic Affairs"):
+		findings.update(diplomatic_findings(org, settings, t))
 	return sync_exceptions(org, findings)
 
 
-def _finding(etype, severity, title, doctype, name, description, due=None):
+def _finding(etype, severity, title, doctype, name, description, due=None, restricted=0):
 	return {
+		"restricted": restricted,
 		"exception_type": etype,
 		"severity": severity,
 		"title": title[:140],
@@ -222,6 +230,161 @@ def cold_chain_findings(org, t):
 			"Cold-chain items will be placed on QA hold when this shipment is received.",
 			t,
 		)
+	return out
+
+
+OPEN_SHIPMENT = ("Planned", "Booked", "In Transit", "At Port", "Customs Clearance", "Released")
+
+
+def privilege_findings(org, s, t):
+	out = {}
+	warn = s.privilege_warning_days or 30
+	privs = {
+		p.name: p
+		for p in frappe.get_all(
+			"IQ Privilege",
+			filters={"organization": org, "review_status": ["!=", "Revoked"]},
+			fields=["name", "title", "review_status", "effective_date", "expiry_date", "no_expiry_stated", "reference_no"],
+		)
+	}
+	for p in privs.values():
+		if p.review_status == "Confirmed" and p.expiry_date:
+			days = (getdate(p.expiry_date) - t).days
+			if days <= warn:
+				out[f"privexp:{p.name}"] = _finding(
+					"Privilege Expiry", "High" if days < 0 else ("High" if days <= 7 else "Medium"),
+					f"{p.title}: {'expired' if days < 0 else f'expires in {days} days'}", "IQ Privilege", p.name,
+					f"Authority reference {p.reference_no}; recorded expiry {p.expiry_date}. Plan renewal or confirm coverage for upcoming shipments.",
+					add_days(getdate(p.expiry_date), -7) if days > 7 else t,
+				)
+	for sh in frappe.get_all(
+		"IQ Shipment",
+		filters={"organization": org, "privilege": ["is", "set"], "status": ["in", OPEN_SHIPMENT]},
+		fields=["name", "shipment_title", "privilege", "planned_eta"],
+	):
+		p = privs.get(sh.privilege) or frappe.db.get_value(
+			"IQ Privilege", sh.privilege, ["name", "title", "review_status", "effective_date", "expiry_date", "no_expiry_stated"], as_dict=True
+		)
+		problems = []
+		if p.review_status != "Confirmed":
+			problems.append(f"privilege is '{p.review_status}', not confirmed")
+		eta = getdate(sh.planned_eta) if sh.planned_eta else None
+		if eta and getdate(p.effective_date) > eta:
+			problems.append(f"planned arrival {eta} is before the effective date {p.effective_date}")
+		if eta and p.expiry_date and eta > getdate(p.expiry_date):
+			problems.append(f"planned arrival {eta} is after the recorded expiry {p.expiry_date}")
+		if problems:
+			out[f"privconf:{sh.name}"] = _finding(
+				"Privilege Conflict", "High", f"{sh.shipment_title}: possible privilege conflict", "IQ Shipment", sh.name,
+				f"Linked to {p.title} ({sh.privilege}): " + "; ".join(problems) + ". This is a date/status check of your records, not a legal determination; confirm with your compliance team.",
+				t,
+			)
+	return out
+
+
+def lc_findings(org, s, t):
+	out = {}
+	warn = s.lc_warning_days or 14
+	for lc in frappe.get_all(
+		"IQ LC Case",
+		filters={"organization": org, "status": ["not in", ["Payment Made", "Closed", "Cancelled"]]},
+		fields=["name", "bank", "lc_number", "status", "latest_shipment_date", "expiry_date", "presentation_deadline", "next_deadline"],
+	):
+		doc = frappe.get_doc("IQ LC Case", lc.name)
+		events = {m.event for m in doc.milestones}
+		shipped = doc.shipped_on()
+		checks = []
+		if lc.latest_shipment_date and not shipped:
+			checks.append(("shipment", "latest shipment date", getdate(lc.latest_shipment_date)))
+		if lc.presentation_deadline and "Documents Presented" not in events:
+			checks.append(("presentation", "document presentation deadline", getdate(lc.presentation_deadline)))
+		if lc.expiry_date:
+			checks.append(("expiry", "LC expiry", getdate(lc.expiry_date)))
+		for key, label, when in checks:
+			days = (when - t).days
+			if days <= warn:
+				out[f"lc:{key}:{lc.name}"] = _finding(
+					"LC Deadline", "Critical" if days < 0 else ("High" if days <= 5 else "Medium"),
+					f"LC {lc.lc_number or lc.name} ({lc.bank}): {label} {'passed' if days < 0 else f'in {days} days'}",
+					"IQ LC Case", lc.name,
+					f"{label.capitalize()} {when}; LC status '{lc.status}'. Confirm next steps and dates with the bank.",
+					when if days >= 0 else t,
+				)
+				break  # one deadline exception per LC: the most urgent applicable
+	return out
+
+
+def diplomatic_findings(org, s, t):
+	"""Personal-data exceptions: always restricted to diplomatic / HR roles."""
+	out = {}
+	warn = s.diplomatic_id_warning_days or 60
+	for d in frappe.get_all(
+		"IQ Diplomatic ID",
+		filters={"organization": org},
+		fields=["name", "employee_name", "id_type", "expiry_date", "renewal_status", "next_follow_up", "persona"],
+	):
+		if d.persona and frappe.db.get_value("IQ Diplomatic Persona", d.persona, "persona_status") == "Departed":
+			continue
+		days = (getdate(d.expiry_date) - t).days
+		if days <= warn and d.renewal_status in ("Not Started", "Collected"):
+			out[f"didrenew:{d.name}"] = _finding(
+				"Diplomatic ID Renewal", "Critical" if days < 0 else ("High" if days <= 21 else "Medium"),
+				f"{d.employee_name}: {d.id_type} {'expired' if days < 0 else f'expires in {days} days'}, renewal not started",
+				"IQ Diplomatic ID", d.name, f"Expiry {d.expiry_date}. Start the renewal checklist.", t, restricted=1,
+			)
+		if d.renewal_status in ("Submitted", "Additional Information Requested") and d.next_follow_up and getdate(d.next_follow_up) < t:
+			out[f"didfollow:{d.name}"] = _finding(
+				"Renewal Follow-up", "Medium", f"{d.employee_name}: renewal follow-up overdue", "IQ Diplomatic ID", d.name,
+				f"Follow-up was due {d.next_follow_up}; status '{d.renewal_status}'.", t, restricted=1,
+			)
+	personas = {
+		p.name: p
+		for p in frappe.get_all(
+			"IQ Diplomatic Persona",
+			filters={"organization": org, "persona_status": ["!=", "Departed"]},
+			fields=["name", "full_name", "passport_expiry", "assignment_end_date", "active_ids", "active_privileges"],
+		)
+	}
+	for p in personas.values():
+		if p.passport_expiry:
+			days = (getdate(p.passport_expiry) - t).days
+			if days <= 180:
+				out[f"passport:{p.name}"] = _finding(
+					"Passport Expiry", "High" if days <= 60 else "Medium",
+					f"{p.full_name}: passport {'expired' if days < 0 else f'expires in {days} days'}", "IQ Diplomatic Persona", p.name,
+					f"Passport expiry {p.passport_expiry}. ID and privilege renewals usually depend on a valid passport.", t, restricted=1,
+				)
+		if p.assignment_end_date:
+			days = (getdate(p.assignment_end_date) - t).days
+			if days <= 60 and (p.active_ids or p.active_privileges):
+				out[f"depart:{p.name}"] = _finding(
+					"Departure Close-out", "High" if days <= 14 else "Medium",
+					f"{p.full_name}: departure in {days} days with {p.active_ids or 0} ID(s) / {p.active_privileges or 0} privilege(s) open",
+					"IQ Diplomatic Persona", p.name,
+					f"Assignment ends {p.assignment_end_date}. Plan ID return and the close-out of personal privileges (e.g. vehicle and plate) under the applicable procedure.",
+					add_days(getdate(p.assignment_end_date), -14), restricted=1,
+				)
+	for pp in frappe.get_all(
+		"IQ Personal Privilege",
+		filters={"organization": org, "review_status": "Confirmed"},
+		fields=["name", "persona", "full_name", "privilege_type", "expiry_date", "quota_value", "quota_used_pct", "quota_unit", "used_value"],
+	):
+		if pp.persona not in personas:
+			continue
+		if pp.expiry_date:
+			days = (getdate(pp.expiry_date) - t).days
+			if days <= warn:
+				out[f"ppexp:{pp.name}"] = _finding(
+					"Personal Privilege Expiry", "High" if days <= 14 else "Medium",
+					f"{pp.full_name}: {pp.privilege_type} {'expired' if days < 0 else f'expires in {days} days'}",
+					"IQ Personal Privilege", pp.name, f"Recorded expiry {pp.expiry_date}.", t, restricted=1,
+				)
+		if pp.quota_value and (pp.quota_used_pct or 0) >= 90:
+			out[f"ppquota:{pp.name}"] = _finding(
+				"Privilege Quota", "Medium", f"{pp.full_name}: {pp.privilege_type} {pp.quota_used_pct}% used",
+				"IQ Personal Privilege", pp.name,
+				f"Used {pp.used_value} of {pp.quota_value} {pp.quota_unit or ''}.", t, restricted=1,
+			)
 	return out
 
 

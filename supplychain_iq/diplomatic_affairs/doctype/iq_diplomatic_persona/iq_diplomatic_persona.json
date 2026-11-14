@@ -1,0 +1,258 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-11-14 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "organization",
+  "full_name",
+  "diplomatic_category",
+  "principal",
+  "relationship",
+  "employee_id",
+  "position",
+  "duty_station",
+  "col1",
+  "nationality",
+  "persona_status",
+  "arrival_date",
+  "assignment_end_date",
+  "departed_on",
+  "passport_section",
+  "passport_type",
+  "passport_number",
+  "col2",
+  "passport_expiry",
+  "summary_section",
+  "active_ids",
+  "active_privileges",
+  "col3",
+  "next_expiry",
+  "dependants_count",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "organization",
+   "fieldtype": "Link",
+   "label": "Organization",
+   "options": "IQ Organization",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "description": "Set automatically from your organization membership."
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "Full Name",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "diplomatic_category",
+   "fieldtype": "Select",
+   "label": "Diplomatic Category",
+   "options": "Diplomatic Agent\nAdministrative & Technical Staff\nService Staff\nInternational Staff (non-diplomatic)\nDependant",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "As recognised by the host country for this person. IQ records it; it does not determine status."
+  },
+  {
+   "fieldname": "principal",
+   "fieldtype": "Link",
+   "label": "Principal (for dependants)",
+   "options": "IQ Diplomatic Persona",
+   "depends_on": "eval:doc.diplomatic_category=='Dependant'"
+  },
+  {
+   "fieldname": "relationship",
+   "fieldtype": "Data",
+   "label": "Relationship",
+   "depends_on": "eval:doc.diplomatic_category=='Dependant'"
+  },
+  {
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "label": "Employee ID"
+  },
+  {
+   "fieldname": "position",
+   "fieldtype": "Data",
+   "label": "Position"
+  },
+  {
+   "fieldname": "duty_station",
+   "fieldtype": "Data",
+   "label": "Duty Station",
+   "default": "Addis Ababa"
+  },
+  {
+   "fieldname": "col1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality"
+  },
+  {
+   "fieldname": "persona_status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Active\nDeparting\nDeparted",
+   "default": "Active",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "arrival_date",
+   "fieldtype": "Date",
+   "label": "Arrival Date"
+  },
+  {
+   "fieldname": "assignment_end_date",
+   "fieldtype": "Date",
+   "label": "Assignment End Date",
+   "in_list_view": 1,
+   "description": "Planned departure; IQ reminds you to close out IDs and privileges before it."
+  },
+  {
+   "fieldname": "departed_on",
+   "fieldtype": "Date",
+   "label": "Departed On"
+  },
+  {
+   "fieldname": "passport_section",
+   "fieldtype": "Section Break",
+   "label": "Passport"
+  },
+  {
+   "fieldname": "passport_type",
+   "fieldtype": "Select",
+   "label": "Passport Type",
+   "options": "Diplomatic\nService / Official\nUN Laissez-Passer\nNational\nOther"
+  },
+  {
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number"
+  },
+  {
+   "fieldname": "col2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "passport_expiry",
+   "fieldtype": "Date",
+   "label": "Passport Expiry"
+  },
+  {
+   "fieldname": "summary_section",
+   "fieldtype": "Section Break",
+   "label": "Summary (calculated)"
+  },
+  {
+   "fieldname": "active_ids",
+   "fieldtype": "Int",
+   "label": "Active Ids",
+   "read_only": 1
+  },
+  {
+   "fieldname": "active_privileges",
+   "fieldtype": "Int",
+   "label": "Active Privileges",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "next_expiry",
+   "fieldtype": "Date",
+   "label": "Next ID / Privilege Expiry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "dependants_count",
+   "fieldtype": "Int",
+   "label": "Dependants Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Protocol Notes"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-14 23:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Diplomatic Affairs",
+ "name": "IQ Diplomatic Persona",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Org Admin",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ HR Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Protocol Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "DPP-.#####",
+ "naming_rule": "Expression (old style)",
+ "title_field": "full_name",
+ "show_title_field_in_link": 1,
+ "search_fields": "full_name,employee_id,position"
+}

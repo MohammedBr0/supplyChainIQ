@@ -4,5 +4,5 @@
 from frappe.model.document import Document
 
 
-class IQDiplomaticID(Document):
+class IQPrivilegeUtilisation(Document):
 	pass

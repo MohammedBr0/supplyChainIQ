@@ -22,6 +22,10 @@ class IQShipment(Document):
 
 	def on_update(self):
 		suppliers.update_supplier(self.supplier)
+		if self.lc_case:
+			from supplychain_iq.supplychain_iq.doctype.iq_lc_case.iq_lc_case import refresh_for_shipment
+
+			refresh_for_shipment(self)
 		before = self.get_doc_before_save()
 		if before and before.supplier and before.supplier != self.supplier:
 			suppliers.update_supplier(before.supplier)

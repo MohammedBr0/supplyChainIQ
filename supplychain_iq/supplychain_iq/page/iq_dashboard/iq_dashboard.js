@@ -52,6 +52,8 @@ class IQDashboard {
 		page.add_inner_button(__("Stock Issue / Transfer"), () => frappe.new_doc("IQ Stock Movement", { movement_type: "Issue" }), add);
 		page.add_inner_button(__("Delivery"), () => frappe.new_doc("IQ Delivery"), add);
 		page.add_inner_button(__("Temperature Reading"), () => frappe.new_doc("IQ Temperature Log"), add);
+		page.add_inner_button(__("Privilege / Permit"), () => frappe.new_doc("IQ Privilege"), add);
+		page.add_inner_button(__("LC Case"), () => frappe.new_doc("IQ LC Case"), add);
 		page.add_inner_button(__("Import Temperature File"), () => new_import("Temperature Readings"), add);
 		page.add_inner_button(__("Exchange Rate"), () => frappe.new_doc("IQ Exchange Rate"), add);
 		page.add_inner_button(__("Import Stock File"), () => new_import("Existing Stock"), add);
@@ -285,6 +287,27 @@ class IQDashboard {
 			}
 		} else h += this.locked("Warehouse & Batch Control / Distribution / Cold Chain");
 		h += "</div>";
+
+		if (d.compliance) {
+			const cp = d.compliance;
+			h += this.section(__("Compliance & finance"), __("privileges, permits and LC deadlines"));
+			h += '<div class="iq-grid2">';
+			if (cp.privileges_by_validity) {
+				h += `<div class="iq-card"><h5>${__("Privileges & permits by validity")}</h5>${this.bar(cp.privileges_by_validity)}
+					<div class="iq-tiles" style="margin-top:12px">${this.tile(cp.privileges_pending_review, __("Awaiting review"), cp.privileges_pending_review ? "warn" : "ok", "/desk/iq-privilege")}</div></div>`;
+			}
+			if (cp.lc_cases) {
+				h += '<div class="iq-card"><h5>' + __("Open LC cases") + "</h5>" + this.table([
+					[__("LC"), (r) => link("IQ LC Case", r.name, r.lc_number || r.name)],
+					[__("Bank"), (r) => esc(r.bank)],
+					[__("Status"), (r) => esc(r.status)],
+					[__("Amount"), (r) => esc(r.currency) + " " + money(r.amount)],
+					[__("Next deadline"), (r) => fmtDate(r.next_deadline)],
+					[__("Checklist"), (r) => esc(r.checklist_progress) + "%"],
+				], cp.lc_cases, __("No open LC cases")) + "</div>";
+			}
+			h += "</div>";
+		}
 
 		h += this.section(__("Performance"), "");
 		h += '<div class="iq-grid2"><div class="iq-card">';

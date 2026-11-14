@@ -23,7 +23,7 @@ MODULES = (
 	"Cold Chain Intelligence",
 	"Regulatory & Privileges",
 	"LC & Import Finance",
-	"Diplomatic ID Renewal",
+	"Diplomatic Affairs",
 	"Partner Portals",
 )
 
@@ -48,7 +48,9 @@ DOCTYPE_MODULE = {
 	"IQ Temperature Log": "Cold Chain Intelligence",
 	"IQ Privilege": "Regulatory & Privileges",
 	"IQ LC Case": "LC & Import Finance",
-	"IQ Diplomatic ID": "Diplomatic ID Renewal",
+	"IQ Diplomatic ID": "Diplomatic Affairs",
+	"IQ Diplomatic Persona": "Diplomatic Affairs",
+	"IQ Personal Privilege": "Diplomatic Affairs",
 	"IQ Portal User": "Partner Portals",
 }
 
@@ -90,7 +92,7 @@ def get_entitlements(org: str) -> dict:
 		)
 		active = org_doc.subscription_status in ("Trial", "Active") and bool(package.is_active)
 		if not (org_doc.enable_diplomatic_id and org_doc.organization_type in DIPLOMATIC_ID_ORG_TYPES):
-			modules.discard("Diplomatic ID Renewal")  # in the package but not switched on by the organization
+			modules.discard("Diplomatic Affairs")  # in the package but not switched on by the organization
 		cache[org] = frappe._dict(
 			package=package.name,
 			active=active,
@@ -118,7 +120,7 @@ def require_module(org: str, module: str):
 	if not has_module(org, module):
 		hint = (
 			_(" An Org Admin must also enable it in the organization's Optional Features.")
-			if module == "Diplomatic ID Renewal"
+			if module == "Diplomatic Affairs"
 			else ""
 		)
 		frappe.throw(

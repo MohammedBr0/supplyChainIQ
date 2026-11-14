@@ -32,6 +32,9 @@ trap 'kill $PLACEHOLDER_PID 2>/dev/null || true' EXIT
 
 redis-server --port 6379 --bind 127.0.0.1 --save "" --appendonly no --maxmemory 64mb \
   --maxmemory-policy allkeys-lru --daemonize yes >/dev/null
+sleep 1
+# cache/queue only: never carry cached module maps or jobs across deploys
+redis-cli -p 6379 flushall >/dev/null 2>&1 || true
 
 ./env/bin/python - <<PY
 import json, os

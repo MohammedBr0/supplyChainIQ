@@ -1,0 +1,32 @@
+{
+ "content": null,
+ "creation": "2026-11-14 23:00:00.000000",
+ "doctype": "Page",
+ "icon": "globe",
+ "idx": 0,
+ "modified": "2026-11-14 23:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Diplomatic Affairs",
+ "name": "iq-diplomatic",
+ "owner": "Administrator",
+ "page_name": "iq-diplomatic",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "IQ Org Admin"
+  },
+  {
+   "role": "IQ Protocol Officer"
+  },
+  {
+   "role": "IQ HR Officer"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Diplomatic Affairs"
+}

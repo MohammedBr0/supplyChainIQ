@@ -10,7 +10,7 @@ frappe.ui.form.on("IQ Privilege", {
 		};
 		const s = frm.doc.review_status;
 		if (["Draft", "Needs Legal Review"].includes(s)) frm.add_custom_button(__("Submit for Review"), () => call("submit_for_review")).addClass("btn-primary");
-		const reviewer = ["IQ Compliance Officer", "IQ Org Admin", "System Manager"].some((r) => frappe.user.has_role(r));
+		const reviewer = ["IQ Compliance Officer", "IQ Protocol Officer", "IQ Org Admin", "System Manager"].some((r) => frappe.user.has_role(r));
 		if (reviewer && s === "Under Review") {
 			frm.add_custom_button(__("Confirm"), () => ask(__("Confirm privilege"), "confirm", false), __("Review"));
 		}
