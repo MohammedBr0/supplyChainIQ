@@ -43,6 +43,8 @@ TENANT_DOCTYPES = (
 	"IQ Portal User",
 	"IQ Customs Case",
 	"IQ Integration Connection",
+	"IQ Document Extraction",
+	"IQ Document",
 )
 
 PLATFORM_ROLES = {"System Manager"}
@@ -148,6 +150,7 @@ transitor_pqc = _make_pqc("IQ Transitor")
 portal_user_pqc = _make_pqc("IQ Portal User")
 customs_case_pqc = _make_pqc("IQ Customs Case")
 integration_connection_pqc = _make_pqc("IQ Integration Connection")
+document_extraction_pqc = _make_pqc("IQ Document Extraction")
 
 
 def has_permission(doc, ptype=None, user=None, debug=False) -> bool:
@@ -167,7 +170,7 @@ def has_permission(doc, ptype=None, user=None, debug=False) -> bool:
 		return ptype == "create" or doc.is_new()
 	if doc_org != org:
 		return False
-	if doc.doctype == "IQ Exception" and doc.get("restricted") and not can_see_restricted(user):
+	if doc.doctype in ("IQ Exception", "IQ Document") and doc.get("restricted") and not can_see_restricted(user):
 		return False
 	from supplychain_iq.entitlements import doctype_entitled
 

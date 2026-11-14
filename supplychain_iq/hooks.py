@@ -291,15 +291,9 @@ add_to_apps_screen = [
 		"route": "/desk/iq-dashboard",
 		"has_permission": "supplychain_iq.tenancy.has_desk_app_permission",
 	},
-	{
-		# separate app for NGO / INGO / UN-related and international organizations
-		"name": "supplychain_iq_diplomatic",
-		"logo": "/assets/supplychain_iq/images/iq-diplomatic-logo.svg",
-		"title": "Diplomatic Affairs",
-		"route": "/desk/iq-diplomatic",
-		"has_permission": "supplychain_iq.diplomatic_affairs.access.has_app_permission",
-	},
 ]
+# Diplomatic Affairs lives inside the SupplyChain IQ desk (sidebar section), gated by
+# supplychain_iq.diplomatic_affairs.access and the organization's opt-in.
 
 app_home = "/desk/iq-dashboard"
 
@@ -335,6 +329,7 @@ _TENANT = {
 	"IQ Portal User": "portal_user_pqc",
 	"IQ Customs Case": "customs_case_pqc",
 	"IQ Integration Connection": "integration_connection_pqc",
+	"IQ Document Extraction": "document_extraction_pqc",
 }
 
 permission_query_conditions = {dt: f"supplychain_iq.tenancy.{fn}" for dt, fn in _TENANT.items()}
@@ -353,6 +348,12 @@ doc_events["*"] = {
 	"on_cancel": "supplychain_iq.audit.on_cancel",
 	"on_trash": "supplychain_iq.audit.on_trash",
 }
+permission_query_conditions["IQ Document"] = "supplychain_iq.documents_store.document_pqc"
+has_permission["IQ Document"] = "supplychain_iq.tenancy.has_permission"
+doc_events["IQ Document"] = {"before_validate": "supplychain_iq.tenancy.validate_tenant_document"}
+# attachments on these records are filed in the document library automatically
+for _dt in ("IQ Shipment", "IQ Privilege", "IQ LC Case", "IQ Cost Line", "IQ Delivery", "IQ Personal Privilege", "IQ Diplomatic ID"):
+	doc_events.setdefault(_dt, {})["on_update"] = "supplychain_iq.documents_store.sync"
 permission_query_conditions["IQ Audit Event"] = "supplychain_iq.audit.audit_pqc"
 permission_query_conditions["IQ Integration Log"] = "supplychain_iq.audit.integration_log_pqc"
 has_permission["IQ Audit Event"] = "supplychain_iq.audit.log_has_permission"
@@ -360,6 +361,7 @@ has_permission["IQ Integration Log"] = "supplychain_iq.audit.log_has_permission"
 
 scheduler_events = {
 	"daily": [
+		"supplychain_iq.intelligence.exceptions.refresh_document_validity",
 		"supplychain_iq.intelligence.exceptions.run_all_organizations",
 		"supplychain_iq.intelligence.suppliers.update_all",
 	],

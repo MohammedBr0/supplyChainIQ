@@ -41,6 +41,6 @@ class IQPersonalPrivilege(ReviewMixin, Document):
 		self.validate_review_and_validity()
 
 	def on_update(self):
-		from supplychain_iq.diplomatic_affairs.doctype.iq_diplomatic_persona.iq_diplomatic_persona import refresh_summary
+		from supplychain_iq.supplychain_iq.doctype.iq_diplomatic_persona.iq_diplomatic_persona import refresh_summary
 
 		refresh_summary(self.persona)

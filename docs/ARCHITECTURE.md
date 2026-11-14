@@ -61,7 +61,7 @@ QA fields can only change through `set_qa_decision`, which requires the QA Offic
 For persistent conditions, such as a short delivery, a user can mark the exception **Dismissed** with notes, and the engine will not raise it again. **Resolved** exceptions are re-raised if the condition still holds on the next run.
 
 ## ADR-11: Diplomatic Affairs is a separate app area with personal-data controls
-It is a separate Frappe module (`diplomatic_affairs/`) with its own apps-screen entry, sidebar and dashboard, so it can later be split into its own Frappe app.
+It lives inside the SupplyChain IQ desk as a sidebar section with its own dashboard page (it was briefly a separate apps-screen entry; patch v0_7 merged it). Its access rules are in `diplomatic_affairs/access.py`.
 
 Access requires three things:
 1. The package module.

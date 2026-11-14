@@ -27,6 +27,17 @@ def run_all_organizations():
 			frappe.log_error(title=f"IQ exception checks failed for {org}")
 
 
+def refresh_document_validity():
+	"""Daily: re-evaluate expiry status of stored documents."""
+	for name in frappe.get_all("IQ Document", filters={"expiry_date": ["is", "set"]}, pluck="name"):
+		d = frappe.get_doc("IQ Document", name)
+		old = d.validity_status
+		d.update_validity()
+		if d.validity_status != old:
+			frappe.db.set_value("IQ Document", name, "validity_status", d.validity_status, update_modified=False)
+	frappe.db.commit()
+
+
 def run_for_organization(org: str) -> dict:
 	if not has_module(org, "Exception Management"):
 		return {"skipped": "Exception Management not in package"}
@@ -60,6 +71,7 @@ def run_for_organization(org: str) -> dict:
 		findings.update(diplomatic_findings(org, settings, t))
 	if has_module(org, "Customs Management"):
 		findings.update(customs_findings(org, settings, t))
+	findings.update(document_findings(org, t))
 	return sync_exceptions(org, findings)
 
 
@@ -161,6 +173,24 @@ def cost_findings(org, s, t):
 				f"actual {summary['compared_actual']:,.2f} {sh.base_currency or ''} (alert threshold {threshold}%).",
 				add_days(t, 7),
 			)
+	return out
+
+
+def document_findings(org, t):
+	"""Manually filed documents that are expiring (auto-filed ones are covered by their record's own rule)."""
+	out = {}
+	for d in frappe.get_all(
+		"IQ Document",
+		filters={"organization": org, "auto_filed": 0, "validity_status": ["in", ["Expiring Soon", "Expired"]]},
+		fields=["name", "title", "section", "expiry_date", "restricted"],
+	):
+		days = (getdate(d.expiry_date) - t).days
+		out[f"docexp:{d.name}"] = _finding(
+			"Document Expiry", "High" if days < 0 else "Medium",
+			f"{d.title}: {'expired' if days < 0 else f'expires in {days} days'}", "IQ Document", d.name,
+			f"Filed under {d.section}; expiry {d.expiry_date}. Renew or replace the document.",
+			t, restricted=d.restricted or 0,
+		)
 	return out
 
 

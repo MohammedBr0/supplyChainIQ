@@ -1,0 +1,268 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-11-14 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "organization",
+  "title",
+  "section",
+  "document_type",
+  "file",
+  "col1",
+  "reference_doctype",
+  "reference_name",
+  "document_date",
+  "expiry_date",
+  "validity_status",
+  "details_section",
+  "description",
+  "col2",
+  "restricted",
+  "auto_filed",
+  "uploaded_by"
+ ],
+ "fields": [
+  {
+   "fieldname": "organization",
+   "fieldtype": "Link",
+   "label": "Organization",
+   "options": "IQ Organization",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "description": "Set automatically from your organization membership."
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "section",
+   "fieldtype": "Select",
+   "label": "Section",
+   "options": "Shipping\nCustoms\nCompliance & Privileges\nFinance & LC\nProcurement & Contracts\nWarehouse & Quality\nDiplomatic Affairs\nGeneral",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Where the document is filed. Diplomatic Affairs documents are visible only to Protocol Officers, HR Officers and Org Admins."
+  },
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Data",
+   "label": "Document Type",
+   "in_list_view": 1,
+   "description": "e.g. Commercial Invoice, Bill of Lading, Contract, Certificate."
+  },
+  {
+   "fieldname": "file",
+   "fieldtype": "Attach",
+   "label": "File",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Linked Record Type",
+   "options": "DocType",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Linked Record",
+   "options": "reference_doctype",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "document_date",
+   "fieldtype": "Date",
+   "label": "Document Date"
+  },
+  {
+   "fieldname": "expiry_date",
+   "fieldtype": "Date",
+   "label": "Expiry Date",
+   "in_list_view": 1,
+   "description": "Leave blank if the document does not expire."
+  },
+  {
+   "fieldname": "validity_status",
+   "fieldtype": "Select",
+   "label": "Validity Status",
+   "options": "No Expiry\nValid\nExpiring Soon\nExpired",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "details_section",
+   "fieldtype": "Section Break",
+   "label": "Details"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "col2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "restricted",
+   "fieldtype": "Check",
+   "label": "Restricted",
+   "read_only": 1
+  },
+  {
+   "fieldname": "auto_filed",
+   "fieldtype": "Check",
+   "label": "Filed Automatically",
+   "read_only": 1,
+   "description": "Filed from a record's attachment (e.g. a shipment's document checklist)."
+  },
+  {
+   "fieldname": "uploaded_by",
+   "fieldtype": "Link",
+   "label": "Uploaded By",
+   "options": "User",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-15 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SupplyChain IQ",
+ "name": "IQ Document",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Org Admin",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "role": "IQ Logistics Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 1,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ Warehouse Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 1,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ QA Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 1,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ Compliance Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 1,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ HR Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 1,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ Protocol Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 0,
+   "create": 1,
+   "write": 1,
+   "delete": 0
+  },
+  {
+   "role": "IQ Viewer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 0,
+   "share": 0,
+   "create": 0,
+   "write": 0,
+   "delete": 0
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "DOC-.YYYY.-.#####",
+ "naming_rule": "Expression (old style)",
+ "title_field": "title",
+ "show_title_field_in_link": 1,
+ "search_fields": "title,section,document_type,reference_name"
+}

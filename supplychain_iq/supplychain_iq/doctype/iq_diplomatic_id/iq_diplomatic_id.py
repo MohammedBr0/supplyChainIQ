@@ -83,7 +83,7 @@ class IQDiplomaticID(Document):
 		self.id_status = "Expired" if self.days_to_expiry < 0 else ("Renewal Due" if self.days_to_expiry <= warn else "Valid")
 
 	def on_update(self):
-		from supplychain_iq.diplomatic_affairs.doctype.iq_diplomatic_persona.iq_diplomatic_persona import refresh_summary
+		from supplychain_iq.supplychain_iq.doctype.iq_diplomatic_persona.iq_diplomatic_persona import refresh_summary
 
 		refresh_summary(self.persona)
 

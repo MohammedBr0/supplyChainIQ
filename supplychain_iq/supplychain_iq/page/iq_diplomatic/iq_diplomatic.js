@@ -21,7 +21,7 @@ class IQDiplomatic {
 		page.add_inner_button(__("Renewals in progress"), () => frappe.set_route("List", "IQ Diplomatic ID", { renewal_status: ["not in", ["Not Started", "Collected"]] }), go);
 		page.add_inner_button(__("Privileges pending review"), () => frappe.set_route("List", "IQ Personal Privilege", { review_status: ["in", ["Draft", "Under Review", "Needs Legal Review"]] }), go);
 		page.add_inner_button(__("Departing staff"), () => frappe.set_route("List", "IQ Diplomatic Persona", { persona_status: ["!=", "Departed"] }), go);
-		page.add_menu_item(__("Back to SupplyChain IQ"), () => frappe.set_route("iq-dashboard"));
+		page.add_menu_item(__("SupplyChain IQ Dashboard"), () => frappe.set_route("iq-dashboard"));
 		frappe.call("supplychain_iq.api.diplomatic.get_organizations").then((r) => {
 			const orgs = r.message || [];
 			if (orgs.length > 1) {

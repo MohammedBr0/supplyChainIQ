@@ -56,6 +56,7 @@ DOCTYPE_MODULE = {
 	"IQ Portal User": "Partner Portals",
 	"IQ Customs Case": "Customs Management",
 	"IQ Integration Connection": "ERP Integration",
+	"IQ Document Extraction": "Data Intake",
 }
 
 IMPORT_TYPE_MODULE = {
